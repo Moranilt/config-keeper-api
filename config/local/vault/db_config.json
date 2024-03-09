@@ -1,0 +1,7 @@
+{
+  "db_name": "config-keeper",
+  "host": "localhost",
+  "port": "27017",
+  "password": "123456",
+  "username": "root"
+}
