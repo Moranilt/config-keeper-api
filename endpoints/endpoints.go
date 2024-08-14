@@ -7,8 +7,6 @@ import (
 	"github.com/Moranilt/config-keeper/middleware"
 	"github.com/Moranilt/config-keeper/service"
 	"github.com/Moranilt/http-utils/clients/database"
-
-	"net/http/pprof"
 )
 
 type Endpoint struct {
@@ -21,27 +19,22 @@ type Endpoint struct {
 func MakeEndpoints(service service.Service, mw *middleware.Middleware) []Endpoint {
 	return []Endpoint{
 		{
-			Pattern:    "/debug/pprof/profile",
-			HandleFunc: pprof.Profile,
-			Methods:    []string{http.MethodGet},
-		},
-		{
 			Pattern:    "/folders",
 			HandleFunc: service.CreateFolder,
 			Methods:    []string{http.MethodPost},
 		},
 		{
-			Pattern:    "/folders/{id}",
+			Pattern:    "/folders/{folder_id}",
 			HandleFunc: service.GetFolder,
 			Methods:    []string{http.MethodGet},
 		},
 		{
-			Pattern:    "/folders/{id}",
+			Pattern:    "/folders/{folder_id}",
 			HandleFunc: service.DeleteFolder,
 			Methods:    []string{http.MethodDelete},
 		},
 		{
-			Pattern:    "/folders/{id}",
+			Pattern:    "/folders/{folder_id}",
 			HandleFunc: service.EditFolder,
 			Methods:    []string{http.MethodPatch},
 		},
@@ -56,12 +49,12 @@ func MakeEndpoints(service service.Service, mw *middleware.Middleware) []Endpoin
 			Methods:    []string{http.MethodDelete},
 		},
 		{
-			Pattern:    "/files/{id}",
+			Pattern:    "/files/{file_id}",
 			HandleFunc: service.EditFile,
 			Methods:    []string{http.MethodPatch},
 		},
 		{
-			Pattern:    "/files/{id}",
+			Pattern:    "/files/{file_id}",
 			HandleFunc: service.GetFile,
 			Methods:    []string{http.MethodGet},
 		},
@@ -76,12 +69,12 @@ func MakeEndpoints(service service.Service, mw *middleware.Middleware) []Endpoin
 			Methods:    []string{http.MethodPost},
 		},
 		{
-			Pattern:    "/files/{file_id}/contents/{id}",
+			Pattern:    "/files/{file_id}/contents/{content_id}",
 			HandleFunc: service.EditFileContent,
 			Methods:    []string{http.MethodPatch},
 		},
 		{
-			Pattern:    "/files/{file_id}/contents/{id}",
+			Pattern:    "/files/{file_id}/contents/{content_id}",
 			HandleFunc: service.DeleteFileContent,
 			Methods:    []string{http.MethodDelete},
 		},
@@ -96,17 +89,17 @@ func MakeEndpoints(service service.Service, mw *middleware.Middleware) []Endpoin
 			Methods:    []string{http.MethodPost},
 		},
 		{
-			Pattern:    "/files/{file_id}/listeners/{id}",
+			Pattern:    "/files/{file_id}/listeners/{listener_id}",
 			HandleFunc: service.GetListener,
 			Methods:    []string{http.MethodGet},
 		},
 		{
-			Pattern:    "/files/{file_id}/listeners/{id}",
+			Pattern:    "/files/{file_id}/listeners/{listener_id}",
 			HandleFunc: service.EditListener,
 			Methods:    []string{http.MethodPatch},
 		},
 		{
-			Pattern:    "/files/{file_id}/listeners/{id}",
+			Pattern:    "/files/{file_id}/listeners/{listener_id}",
 			HandleFunc: service.DeleteListener,
 			Methods:    []string{http.MethodDelete},
 		},

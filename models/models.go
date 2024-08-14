@@ -15,7 +15,7 @@ type CreateFolderRequest struct {
 type CreateFolderResponse folders.Folder
 
 type GetFolderRequest struct {
-	ID          string  `mapstructure:"id"`
+	FolderID    string  `mapstructure:"folder_id"`
 	OrderColumn *string `mapstructure:"order_column"`
 	OrderType   *string `mapstructure:"order_type"`
 }
@@ -32,7 +32,7 @@ type GetFolderResponse struct {
 }
 
 type DeleteFolderRequest struct {
-	ID string `mapstructure:"id"`
+	FolderID string `mapstructure:"folder_id"`
 }
 
 type DeleteFolderResponse struct {
@@ -40,8 +40,8 @@ type DeleteFolderResponse struct {
 }
 
 type EditFolderRequest struct {
-	ID   string `mapstructure:"id"`
-	Name string `json:"name"`
+	FolderID string `mapstructure:"folder_id"`
+	Name     string `json:"name"`
 }
 
 type EditFolderResponse folders.Folder
@@ -62,14 +62,14 @@ type DeleteFileResponse struct {
 }
 
 type EditFileRequest struct {
-	ID   string `mapstructure:"id"`
-	Name string `json:"name"`
+	FileID string `mapstructure:"file_id"`
+	Name   string `json:"name"`
 }
 
 type EditFileResponse files.File
 
 type GetFileRequest struct {
-	ID string `mapstructure:"id"`
+	FileID string `mapstructure:"file_id"`
 }
 
 type GetFileResponse struct {
@@ -93,15 +93,15 @@ type GetFileContentsRequest struct {
 type GetFileContentsResponse []*file_contents.FileContent
 
 type EditFileContentRequest struct {
-	ID      string  `mapstructure:"id"`
-	Version *string `json:"version"`
-	Content *string `json:"content"`
+	ContentID string  `mapstructure:"content_id"`
+	Version   *string `json:"version"`
+	Content   *string `json:"content"`
 }
 
 type EditFileContentResponse file_contents.FileContent
 
 type DeleteFileContentRequest struct {
-	ID string `mapstructure:"id"`
+	ContentID string `mapstructure:"content_id"`
 }
 
 type DeleteFileContentResponse struct {
@@ -117,7 +117,7 @@ type CreateListenerRequest struct {
 type CreateListenerResponse listeners.Listener
 
 type GetListenerRequest struct {
-	ID string `mapstructure:"id"`
+	ListenerID string `mapstructure:"listener_id"`
 }
 
 type GetListenerResponse listeners.Listener
@@ -129,7 +129,7 @@ type GetFileListenersRequest struct {
 type GetFileListenersResponse []*listeners.Listener
 
 type EditListenerRequest struct {
-	ListenerID       string  `mapstructure:"id"`
+	ListenerID       string  `mapstructure:"listener_id"`
 	Name             *string `json:"name"`
 	CallbackEndpoint *string `json:"callback_endpoint"`
 }
@@ -137,7 +137,7 @@ type EditListenerRequest struct {
 type EditListenerResponse listeners.Listener
 
 type DeleteListenerRequest struct {
-	ID string `mapstructure:"id"`
+	ListenerID string `mapstructure:"listener_id"`
 }
 
 type DeleteListenerResponse struct {

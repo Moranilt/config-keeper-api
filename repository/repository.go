@@ -107,7 +107,7 @@ func (repo *Repository) CreateFolder(ctx context.Context, req *models.CreateFold
 func (repo *Repository) GetFolder(ctx context.Context, req *models.GetFolderRequest) (*models.GetFolderResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	ctx, span := repo.tracer.Start(ctx, "GetFolder", trace.WithAttributes(
-		attribute.String("id", req.ID),
+		attribute.String("folder_id", req.FolderID),
 	))
 	defer span.End()
 
@@ -117,7 +117,7 @@ func (repo *Repository) GetFolder(ctx context.Context, req *models.GetFolderRequ
 		parentID       *string
 	)
 
-	if req.ID == "root" {
+	if req.FolderID == "root" {
 		folderWithPath = &folders.FolderWithPath{
 			Folder: folders.Folder{
 				ID:        "root",
@@ -129,9 +129,9 @@ func (repo *Repository) GetFolder(ctx context.Context, req *models.GetFolderRequ
 			Path: "root",
 		}
 	} else {
-		parentID = &req.ID
+		parentID = &req.FolderID
 		folderWithPath, err = repo.folders.Get(ctx, &folders.GetRequest{
-			ID: req.ID,
+			ID: req.FolderID,
 		})
 		if err != nil {
 			span.RecordError(err)
@@ -177,12 +177,12 @@ func (repo *Repository) GetFolder(ctx context.Context, req *models.GetFolderRequ
 func (repo *Repository) DeleteFolder(ctx context.Context, req *models.DeleteFolderRequest) (*models.DeleteFolderResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	ctx, span := repo.tracer.Start(ctx, "DeleteFolder", trace.WithAttributes(
-		attribute.String("id", req.ID),
+		attribute.String("folder_id", req.FolderID),
 	))
 	defer span.End()
 
 	removed, err := repo.folders.Delete(ctx, &folders.DeleteRequest{
-		ID: req.ID,
+		ID: req.FolderID,
 	})
 	if err != nil {
 		span.RecordError(err)
@@ -198,7 +198,7 @@ func (repo *Repository) DeleteFolder(ctx context.Context, req *models.DeleteFold
 func (repo *Repository) EditFolder(ctx context.Context, req *models.EditFolderRequest) (*models.EditFolderResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	ctx, span := repo.tracer.Start(ctx, "EditFolder", trace.WithAttributes(
-		attribute.String("id", req.ID),
+		attribute.String("folder_id", req.FolderID),
 		attribute.String("name", req.Name),
 	))
 	defer span.End()
@@ -206,7 +206,7 @@ func (repo *Repository) EditFolder(ctx context.Context, req *models.EditFolderRe
 	requiredFields := []utils.RequiredField{
 		{
 			Name:  "id",
-			Value: req.ID,
+			Value: req.FolderID,
 		},
 		{
 			Name:  "name",
@@ -223,7 +223,7 @@ func (repo *Repository) EditFolder(ctx context.Context, req *models.EditFolderRe
 	}
 
 	folder, err := repo.folders.Edit(ctx, &folders.EditRequest{
-		ID:   req.ID,
+		ID:   req.FolderID,
 		Name: req.Name,
 	})
 	if err != nil {
@@ -303,13 +303,13 @@ func (repo *Repository) DeleteFile(ctx context.Context, req *models.DeleteFileRe
 func (repo *Repository) EditFile(ctx context.Context, req *models.EditFileRequest) (*models.EditFileResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	ctx, span := repo.tracer.Start(ctx, "EditFile", trace.WithAttributes(
-		attribute.String("id", req.ID),
+		attribute.String("file_id", req.FileID),
 		attribute.String("name", req.Name),
 	))
 	defer span.End()
 
 	file, err := repo.files.Edit(ctx, &files.EditRequest{
-		FileID: req.ID,
+		FileID: req.FileID,
 		Name:   req.Name,
 	})
 	if err != nil {
@@ -324,12 +324,12 @@ func (repo *Repository) EditFile(ctx context.Context, req *models.EditFileReques
 func (repo *Repository) GetFile(ctx context.Context, req *models.GetFileRequest) (*models.GetFileResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	ctx, span := repo.tracer.Start(ctx, "GetFile", trace.WithAttributes(
-		attribute.String("id", req.ID),
+		attribute.String("file_id", req.FileID),
 	))
 	defer span.End()
 
 	file, err := repo.files.Get(ctx, &files.GetRequest{
-		ID: req.ID,
+		ID: req.FileID,
 	})
 	if err != nil {
 		span.RecordError(err)
@@ -338,7 +338,7 @@ func (repo *Repository) GetFile(ctx context.Context, req *models.GetFileRequest)
 	}
 
 	fileContents, err := repo.fileContent.GetMany(ctx, &file_contents.GetManyRequest{
-		FileID: req.ID,
+		FileID: req.FileID,
 	})
 	if err != nil {
 		span.RecordError(err)
@@ -396,12 +396,12 @@ func (repo *Repository) GetFileContents(ctx context.Context, req *models.GetFile
 func (repo *Repository) EditFileContent(ctx context.Context, req *models.EditFileContentRequest) (*models.EditFileContentResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	ctx, span := repo.tracer.Start(ctx, "EditFileContent", trace.WithAttributes(
-		attribute.String("file_id", req.ID),
+		attribute.String("content_id", req.ContentID),
 	))
 	defer span.End()
 
 	filesContent, err := repo.fileContent.Edit(ctx, &file_contents.EditRequest{
-		FileContentID: req.ID,
+		FileContentID: req.ContentID,
 		Content:       req.Content,
 		Version:       req.Version,
 	})
@@ -420,12 +420,12 @@ func (repo *Repository) EditFileContent(ctx context.Context, req *models.EditFil
 func (repo *Repository) DeleteFileContent(ctx context.Context, req *models.DeleteFileContentRequest) (*models.DeleteFileContentResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	ctx, span := repo.tracer.Start(ctx, "DeleteFileContent", trace.WithAttributes(
-		attribute.String("id", req.ID),
+		attribute.String("content_id", req.ContentID),
 	))
 	defer span.End()
 
 	removed, err := repo.fileContent.Delete(ctx, &file_contents.DeleteRequest{
-		ID: req.ID,
+		ID: req.ContentID,
 	})
 	if err != nil {
 		span.RecordError(err)
@@ -462,12 +462,12 @@ func (repo *Repository) CreateListener(ctx context.Context, req *models.CreateLi
 func (repo *Repository) GetListener(ctx context.Context, req *models.GetListenerRequest) (*models.GetListenerResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	ctx, span := repo.tracer.Start(ctx, "GetListener", trace.WithAttributes(
-		attribute.String("id", req.ID),
+		attribute.String("listener_id", req.ListenerID),
 	))
 	defer span.End()
 
 	listener, err := repo.listeners.Get(ctx, &listeners.GetRequest{
-		ID: req.ID,
+		ID: req.ListenerID,
 	})
 	if err != nil {
 		span.RecordError(err)
@@ -521,12 +521,12 @@ func (repo *Repository) EditListener(ctx context.Context, req *models.EditListen
 func (repo *Repository) DeleteListener(ctx context.Context, req *models.DeleteListenerRequest) (*models.DeleteListenerResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	ctx, span := repo.tracer.Start(ctx, "DeleteListener", trace.WithAttributes(
-		attribute.String("id", req.ID),
+		attribute.String("listener_id", req.ListenerID),
 	))
 	defer span.End()
 
 	removed, err := repo.listeners.Delete(ctx, &listeners.DeleteRequest{
-		ID: req.ID,
+		ID: req.ListenerID,
 	})
 	if err != nil {
 		span.RecordError(err)
