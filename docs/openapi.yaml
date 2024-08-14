@@ -1,0 +1,745 @@
+# https://swagger.io/specification/
+# check requestBodies and  responses in components
+# https://github.com/Redocly/redoc
+# https://redocly.com/docs/redoc/config
+# https://github.com/stoplightio/elements
+# https://github.com/scalar/scalar
+openapi: 3.1.0
+info:
+  title: Config Keeper API
+  version: 1.0.0
+  contact:
+    email: "unicornxoxo2@gmail.com"
+    url: "https://t.me/moranilt"
+  description: >
+    **Config Keeper** is a storage of configuration files with **userfriendly** API and UI.
+    
+    
+    Using this API you can manipulate folders, files, file contents etc.
+servers:
+  - url: "http://locahost:8080"
+tags:
+  - name: Folders
+    description: all folders actions
+  - name: Files
+    description: all files actions
+  - name: File contents
+    description: File contents
+  - name: Listeners
+    description: File listeners which will be called when any content was updated
+
+paths:
+  /folders:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/Create_Folder'
+      summary: Create new folder
+      operationId: createFolder
+      description: >
+        Create new folder. You can provide `parent_id` if you need to create folder in another folder.
+
+        If you want to create folder in `root` - just path null value into parent_id
+      tags: ["Folders"]
+      responses:
+        '201':
+          $ref: '#/components/responses/Create_Folder_Success'
+          
+  /folders/{folder_id}:
+    parameters:
+      - name: folder_id
+        schema:
+          type: string
+          format: uuid
+        in: path
+        required: true
+    get:
+      parameters:
+        - name: order_column
+          schema:
+            type: string
+            enum: ["id","name","updated_at","created_at"]
+          in: query
+          required: false
+        - name: order_type
+          schema:
+            type: string
+            enum: ["asc", "desc"]
+          in: query
+          required: false
+      summary: Get folder with children items
+      operationId: getFolder
+      description: Get folder data? folders and files in it.
+      tags: ["Folders"]
+      responses:
+        '200':
+          $ref: '#/components/responses/Get_Folder_Success'
+          
+    delete:
+      tags: ["Folders"]
+      summary: Delete folder if it exists
+      operationId: deleteFolder
+      description: Delete folder if it exists
+      responses:
+        '200':
+          $ref: '#/components/responses/Delete_Folder_Success'
+          
+    patch:
+      tags: ["Folders"]
+      summary: Edit folder
+      operationId: editFolder
+      description: Change name for selected folder
+      requestBody:
+        $ref: '#/components/requestBodies/Edit_Folder'
+      responses:
+        '200':
+          $ref: '#/components/responses/Edit_Folder_Success'
+          
+  /files:
+    post:
+      tags: ["Files"]
+      summary: Create file
+      operationId: createFIle
+      description: Create new file in folder
+      requestBody:
+        $ref: '#/components/requestBodies/Create_New_File'
+      responses:
+        '201':
+          $ref: '#/components/responses/Create_File_Success'
+          
+  /files/{file_id}:
+    parameters:
+      - name: file_id
+        schema:
+          type: string
+          format: uuid
+        in: path
+        required: true
+    delete:
+      tags: ["Files"]
+      summary: Delete file
+      operationId: deleteFile
+      description: Delete file with provided ID. If file does not exists you will get an error
+      responses:
+        '200':
+          $ref: '#/components/responses/Delete_File_Success'
+    patch:
+      tags: ["Files"]
+      summary: Edit file
+      operationId: editFile
+      description: Change name of file
+      requestBody:
+        $ref: '#/components/requestBodies/Edit_File'
+      responses:
+        '200':
+          $ref: '#/components/responses/Edit_File_Success'
+    get:
+      tags: ["Files"]
+      summary: Get file data
+      operationId: getFile
+      description: Get file data, aliases and file contents
+      responses:
+        '200':
+          $ref: '#/components/responses/Get_File_Success'
+          
+          
+  /files/{file_id}/contents:
+    parameters:
+      - name: file_id
+        schema:
+          type: string
+          format: uuid
+        in: path
+        required: true
+        description: file id
+    post:
+      tags: ["File contents"]
+      summary: Create file content
+      operationId: createFileContent
+      description: You can create multiple contents for a single file with different versions.
+      requestBody:
+        $ref: '#/components/requestBodies/Create_File_Content'
+      responses:
+        '201':
+          $ref: '#/components/responses/Create_File_Content_Success'
+    get:
+      parameters:
+        - name: version
+          schema:
+            type: string
+            example: "v1.0.0"
+          required: false
+          in: query
+          description: you can provide version to find required content with specific version
+      tags: ["File contents"]
+      summary: Get all contents of file
+      operationId: getFileContents
+      description: Get all file contents
+      responses:
+        '200':
+          $ref: '#/components/responses/Get_File_Contents_Success'
+  /files/{file_id}/contents/{content_id}:
+    parameters:
+      - name: content_id
+        schema:
+          type: string
+          format: uuid
+        in: path
+        required: true
+        description: file content id
+      - name: file_id
+        schema:
+          type: string
+          format: uuid
+        in: path
+        required: true
+        description: file id
+    patch:
+      tags: ["File contents"]
+      summary: Edit file content
+      operationId: editFileContent
+      description: Edit file content
+      requestBody:
+        $ref: '#/components/requestBodies/Edit_File_Content'
+      responses:
+        '200':
+          $ref: '#/components/responses/Edit_File_Content_Success'
+    delete:
+      tags: ["File contents"]
+      summary: Delete file content
+      operationId: deleteFileContent
+      description: Delete file content
+      responses:
+        '200':
+          $ref: '#/components/responses/Delete_File_Content_Success'
+  
+  /files/{file_id}/listeners:
+    parameters:
+      - name: file_id
+        schema:
+          type: string
+          format: uuid
+        in: path
+        required: true
+        description: file ID
+    post:
+      tags: ["Listeners"]
+      summary: Create listener
+      operationId: createListener
+      description: Create new listener for a specific file
+      requestBody:
+        $ref: '#/components/requestBodies/Create_Listener'
+      responses:
+        '201':
+          $ref: '#/components/responses/Get_Listener_Success'
+    get:
+      tags: ["Listeners"]
+      summary: Get file listeners
+      operationId: getFileListeners
+      description: Get all files listeners
+      responses:
+        '200':
+          $ref: '#/components/responses/Get_File_Listeners'
+  /files/{file_id}/listeners/{listener_id}:
+    parameters:
+      - name: file_id
+        schema:
+          type: string
+          format: uuid
+        in: path
+        required: true
+        description: file ID
+      - name: listener_id
+        schema:
+          type: string
+          format: uuid
+        in: path
+        required: true
+        description: specific listeners ID
+    get:
+      tags: ["Listeners"]
+      summary: Get info about specific listener
+      operationId: getListener
+      description: Get specific listener data
+      responses:
+        '200':
+          $ref: '#/components/responses/Get_Listener_Success'
+    delete:
+      tags: ["Listeners"]
+      summary: Delete specific listener
+      operationId: deleteListener
+      description: Delete specific listener
+      responses:
+        '200':
+          $ref: '#/components/responses/Delete_File_Listener'
+    patch:
+      tags: ["Listeners"]
+      summary: Edit specific listener
+      operationId: editListener
+      description: Edit specific listener. You can change `name` and/or `calback_endpoint`. You will get new data after updating it.
+      requestBody:
+        $ref: '#/components/requestBodies/Edit_Listener'
+      responses:
+        '200':
+          $ref: '#/components/responses/Get_Listener_Success'
+          
+      
+components:
+  schemas:
+    Default_Response:
+      type: object
+      properties:
+        error:
+          type: object
+          nullable: true
+          example: null
+          properties:
+            code:
+              type: integer
+              minimum: 1
+              maximum: 1000
+              description: error code
+            message:
+              type: string
+              description: short description
+            details:
+              type: object
+              description: key value map
+        body:
+          type: object
+          nullable: true
+          description: main response body which can be null of any value
+          
+    Folder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "folder_1"
+          enum: ["folder_1", "folder_2", "folder_3", "folder_4"]
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    File:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "file_1.yaml"
+          enum: ["file_1.yaml", "file_2.json", "file_3.toml", "file_4.yml"]
+        folder_id:
+          type: string
+          nullable: true
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    File_Content:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+          example: "your file config here in any format"
+          description: any data inside configuration file
+        version:
+          type: string
+          example: "v1.0.0"
+          description: any version in any fomat you want("v1.0.0", "1", "v1.0.0-beta" etc.)
+        file_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    Listener:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        file_id:
+          type: string
+          format: uuid
+        callback_endpoint:
+          type: string
+          example: "https://example.com/config"
+        name:
+          type: string
+          example: "service_name"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+  requestBodies:
+    Create_Folder:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "folder_1"
+              parent_id:
+                type: string
+                nullable: true
+                format: uuid
+                
+    Edit_Folder:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "new_folder_name"
+                
+    Create_New_File:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "file_name.yml"
+              folder_id:
+                type: string
+                format: uuid
+                nullable: true
+
+    Edit_File:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "new_file_name.yaml"
+                
+    Create_File_Content:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              version:
+                type: string
+                example: "v1.0.0"
+              content:
+                type: string
+                example: "your config in any format"
+                
+    Edit_File_Content:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              version:
+                type: string
+                example: "v1.0.0"
+                nullable: true
+              content:
+                type: string
+                example: "your config in any format"
+                nullable: true
+                
+    Create_Listener:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "service_name"
+              callback_endpoint:
+                type: string
+                example: "https://example.com/config"
+                
+    Edit_Listener:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "new_name"
+                nullable: true
+              callback_endpoint:
+                type: string
+                example: "https://new_host.com/config"
+                nullable: true
+
+  responses:
+    Create_Folder_Success:
+      description: New folder data
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/Folder'
+                    
+    Get_Folder_Success:
+      description: Folder data with folders and files in it
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Folder'
+                      - type: object
+                        properties:
+                          path:
+                            type: string
+                            description: absolute path of the folder
+                            example: "parent_folder/folder_1"
+                          folders:
+                            type: array
+                            description: folders list in current folder
+                            minItems: 0
+                            maxItems: 5
+                            items:
+                              $ref: '#/components/schemas/Folder'
+                          files:
+                            type: array
+                            description: files list in current folder
+                            minItems: 0
+                            maxItems: 5
+                            items:
+                              $ref: '#/components/schemas/File'
+                              
+    Delete_Folder_Success:
+      description: removed or not
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: object
+                    properties:
+                      status:
+                        type: boolean
+                   
+    Edit_Folder_Success:
+      description: Updated folder data
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/Folder'
+                    
+    Create_File_Success:
+      description: Created file data
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/File'
+
+    Delete_File_Success:
+      description: removed or not
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: object
+                    properties:
+                      status:
+                        type: boolean
+                   
+    Get_File_Success:
+      description: File data with with aliases and file content
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/File'
+                      - type: object
+                        properties:
+                          contents:
+                            type: array
+                            description: contents list
+                            minItems: 0
+                            maxItems: 5
+                            items:
+                              $ref: '#/components/schemas/File_Content'
+                   
+    Edit_File_Success:
+      description: Updated file data
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/File'
+
+    Create_File_Content_Success:
+      description: New file content data
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/File_Content'
+                    
+    Get_File_Contents_Success:
+      description: All file contents
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: array
+                    minItems: 0
+                    maxItems: 5
+                    items:
+                      $ref: '#/components/schemas/File_Content'
+                      
+    Edit_File_Content_Success:
+      description: Updated file content data
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/File_Content'
+      
+    Delete_File_Content_Success:
+      description: removed or not
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: object
+                    properties:
+                      status:
+                        type: boolean
+                        
+    Get_Listener_Success:
+      description: Listener data
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/Listener'
+                    
+    Get_File_Listeners:
+      description: Get all listeners for a specific file
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: array
+                    minItems: 0
+                    maxItems: 5
+                    items:
+                      $ref: '#/components/schemas/Listener'
+                      
+    Delete_File_Listener:
+      description: Delete specific listener
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: object
+                    properties:
+                      status:
+                        type: boolean
