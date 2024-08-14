@@ -29,7 +29,7 @@ type Order struct {
 	Type   *string
 }
 
-type GetFilesInFolderRequest struct {
+type GetManyRequest struct {
 	FolderID *string
 	Order    *Order
 }

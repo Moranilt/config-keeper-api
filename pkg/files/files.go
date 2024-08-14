@@ -17,7 +17,7 @@ type client struct {
 }
 
 type Client interface {
-	GetFilesInFolder(ctx context.Context, req *GetFilesInFolderRequest) ([]*File, tiny_errors.ErrorHandler)
+	GetMany(ctx context.Context, req *GetManyRequest) ([]*File, tiny_errors.ErrorHandler)
 	Create(ctx context.Context, req *CreateRequest) (*File, tiny_errors.ErrorHandler)
 	Delete(ctx context.Context, req *DeleteRequest) (bool, tiny_errors.ErrorHandler)
 	Edit(ctx context.Context, req *EditRequest) (*File, tiny_errors.ErrorHandler)
@@ -30,7 +30,7 @@ func New(db *database.Client) Client {
 	}
 }
 
-func (c *client) GetFilesInFolder(ctx context.Context, req *GetFilesInFolderRequest) ([]*File, tiny_errors.ErrorHandler) {
+func (c *client) GetMany(ctx context.Context, req *GetManyRequest) ([]*File, tiny_errors.ErrorHandler) {
 	if req == nil {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
 	}

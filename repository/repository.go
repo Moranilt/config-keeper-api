@@ -85,7 +85,7 @@ func (repo *Repository) CreateFolder(ctx context.Context, req *models.CreateFold
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Exists)
 	}
 
-	folder, err := repo.folders.New(ctx, &folders.NewRequest{
+	folder, err := repo.folders.Create(ctx, &folders.CreateRequest{
 		Name:     clearName,
 		ParentID: req.ParentID,
 	})
@@ -153,12 +153,12 @@ func (repo *Repository) GetFolder(ctx context.Context, req *models.GetFolderRequ
 		return nil, err
 	}
 
-	files, err := repo.files.GetFilesInFolder(ctx, &files.GetFilesInFolderRequest{
+	files, err := repo.files.GetMany(ctx, &files.GetManyRequest{
 		FolderID: parentID,
 	})
 	if err != nil {
 		span.RecordError(err)
-		span.SetStatus(codes.Error, "GetFilesInFolder")
+		span.SetStatus(codes.Error, "GetMany")
 		return nil, err
 	}
 

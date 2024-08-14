@@ -23,14 +23,14 @@ func TestClient_NewFolder(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		req            *NewRequest
+		req            *CreateRequest
 		mockSetup      func()
 		expectedFolder *Folder
 		expectedError  tiny_errors.ErrorHandler
 	}{
 		{
 			name: "success",
-			req: &NewRequest{
+			req: &CreateRequest{
 				Name:     "folder_name",
 				ParentID: utils.MakePointer("folder_parent_id"),
 			},
@@ -60,7 +60,7 @@ func TestClient_NewFolder(t *testing.T) {
 		},
 		{
 			name: "sql error",
-			req: &NewRequest{
+			req: &CreateRequest{
 				Name:     "folder_name",
 				ParentID: utils.MakePointer("folder_parent_id"),
 			},
@@ -74,7 +74,7 @@ func TestClient_NewFolder(t *testing.T) {
 		},
 		{
 			name: "struct scan error",
-			req: &NewRequest{
+			req: &CreateRequest{
 				Name:     "folder_name",
 				ParentID: utils.MakePointer("folder_parent_id"),
 			},
@@ -95,7 +95,7 @@ func TestClient_NewFolder(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.mockSetup()
 
-			folder, err := client.New(context.Background(), tt.req)
+			folder, err := client.Create(context.Background(), tt.req)
 
 			if tt.expectedError != nil {
 				assert.Equal(t, tt.expectedError.GetCode(), err.GetCode())

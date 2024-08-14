@@ -15,7 +15,7 @@ func NewMock() *MockClient {
 	return new(MockClient)
 }
 
-func (m *MockClient) New(ctx context.Context, req *NewRequest) (*Folder, tiny_errors.ErrorHandler) {
+func (m *MockClient) New(ctx context.Context, req *CreateRequest) (*Folder, tiny_errors.ErrorHandler) {
 	args := m.Called(ctx, req)
 	folder := args.Get(0)
 	err := args.Get(1)

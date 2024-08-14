@@ -18,7 +18,7 @@ type client struct {
 }
 
 type Client interface {
-	New(ctx context.Context, req *NewRequest) (*Folder, tiny_errors.ErrorHandler)
+	Create(ctx context.Context, req *CreateRequest) (*Folder, tiny_errors.ErrorHandler)
 	Exists(ctx context.Context, req *ExistsRequest) (bool, tiny_errors.ErrorHandler)
 	Get(ctx context.Context, req *GetRequest) (*FolderWithPath, tiny_errors.ErrorHandler)
 	GetMany(ctx context.Context, req *GetManyRequest) ([]*Folder, tiny_errors.ErrorHandler)
@@ -32,7 +32,7 @@ func New(db *database.Client) Client {
 	}
 }
 
-func (c *client) New(ctx context.Context, req *NewRequest) (*Folder, tiny_errors.ErrorHandler) {
+func (c *client) Create(ctx context.Context, req *CreateRequest) (*Folder, tiny_errors.ErrorHandler) {
 	if req == nil {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
 	}

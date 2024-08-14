@@ -16,21 +16,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestClient_GetFilesInFolder(t *testing.T) {
+func TestClient_GetMany(t *testing.T) {
 	tiny_errors.Init(custom_errors.ERRORS)
 	mockDb, sqlMock := database_mock.NewSQlMock(t)
 	client := New(&database.Client{mockDb})
 
 	tests := []struct {
 		name          string
-		req           *GetFilesInFolderRequest
+		req           *GetManyRequest
 		expectedFiles []*File
 		expectedError tiny_errors.ErrorHandler
 		mockSetup     func()
 	}{
 		{
 			name: "success with empty folder_id",
-			req: &GetFilesInFolderRequest{
+			req: &GetManyRequest{
 				FolderID: nil,
 			},
 			expectedFiles: []*File{
@@ -62,7 +62,7 @@ func TestClient_GetFilesInFolder(t *testing.T) {
 		},
 		{
 			name: "success with folder_id",
-			req: &GetFilesInFolderRequest{
+			req: &GetManyRequest{
 				FolderID: utils.MakePointer("folder_id"),
 			},
 			expectedFiles: []*File{
@@ -94,7 +94,7 @@ func TestClient_GetFilesInFolder(t *testing.T) {
 		},
 		{
 			name: "success with folder_id and order",
-			req: &GetFilesInFolderRequest{
+			req: &GetManyRequest{
 				FolderID: utils.MakePointer("folder_id"),
 				Order: &Order{
 					Column: utils.MakePointer("created_at"),
@@ -135,7 +135,7 @@ func TestClient_GetFilesInFolder(t *testing.T) {
 		},
 		{
 			name: "sql error",
-			req: &GetFilesInFolderRequest{
+			req: &GetManyRequest{
 				FolderID: utils.MakePointer("folder_id"),
 			},
 			expectedError: tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(assert.AnError.Error())),
@@ -154,7 +154,7 @@ func TestClient_GetFilesInFolder(t *testing.T) {
 				tt.mockSetup()
 			}
 
-			files, err := client.GetFilesInFolder(context.Background(), tt.req)
+			files, err := client.GetMany(context.Background(), tt.req)
 
 			if tt.expectedError != nil {
 				assert.Equal(t, tt.expectedError.GetCode(), err.GetCode())

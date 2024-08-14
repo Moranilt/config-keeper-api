@@ -15,7 +15,7 @@ func NewMock() *MockClient {
 	return new(MockClient)
 }
 
-func (m *MockClient) GetFilesInFolder(ctx context.Context, req *GetFilesInFolderRequest) ([]*File, tiny_errors.ErrorHandler) {
+func (m *MockClient) GetMany(ctx context.Context, req *GetManyRequest) ([]*File, tiny_errors.ErrorHandler) {
 	args := m.Called(ctx, req)
 	files := args.Get(0)
 	err := args.Get(1)

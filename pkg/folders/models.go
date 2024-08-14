@@ -52,7 +52,7 @@ const (
 	))`
 )
 
-type NewRequest struct {
+type CreateRequest struct {
 	Name     string
 	ParentID *string
 }
