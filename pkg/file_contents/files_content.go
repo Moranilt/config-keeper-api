@@ -18,12 +18,21 @@ type client struct {
 }
 
 type Client interface {
+	// Create creates a new file content entry in the database.
 	Create(ctx context.Context, req *CreateRequest) (*FileContent, tiny_errors.ErrorHandler)
+
+	// GetMany retrieves multiple file content entries from the database.
 	GetMany(ctx context.Context, req *GetManyRequest) ([]*FileContent, tiny_errors.ErrorHandler)
+
+	// Edit updates an existing file content entry in the database.
 	Edit(ctx context.Context, req *EditRequest) (*FileContent, tiny_errors.ErrorHandler)
+
+	// Delete removes a file content entry from the database.
 	Delete(ctx context.Context, req *DeleteRequest) (bool, tiny_errors.ErrorHandler)
 }
 
+// New creates a new instance of the Client interface, which provides methods for
+// interacting with file contents in a database.
 func New(db *database.Client) Client {
 	return &client{
 		db: db,

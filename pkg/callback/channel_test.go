@@ -8,7 +8,7 @@ import (
 )
 
 func TestChannel(t *testing.T) {
-	channel := NewChannel()
+	channel := NewChannel(1)
 
 	go func() {
 		channel.Send(&CallbackRequest{

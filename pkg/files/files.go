@@ -17,13 +17,25 @@ type client struct {
 }
 
 type Client interface {
+	// GetMany retrieves multiple files based on the provided request parameters.
 	GetMany(ctx context.Context, req *GetManyRequest) ([]*File, tiny_errors.ErrorHandler)
+
+	// Create adds a new file to the system.
 	Create(ctx context.Context, req *CreateRequest) (*File, tiny_errors.ErrorHandler)
+
+	// Delete removes a file from the system.
 	Delete(ctx context.Context, req *DeleteRequest) (bool, tiny_errors.ErrorHandler)
+
+	// Edit modifies an existing file.
 	Edit(ctx context.Context, req *EditRequest) (*File, tiny_errors.ErrorHandler)
+
+	// Get retrieves a single file.
 	Get(ctx context.Context, req *GetRequest) (*File, tiny_errors.ErrorHandler)
 }
 
+// New creates a new instance of the Client interface, which provides methods for
+// interacting with files in the system. The Client implementation is backed by
+// the provided database.Client.
 func New(db *database.Client) Client {
 	return &client{
 		db: db,

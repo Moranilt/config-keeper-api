@@ -12,8 +12,12 @@ import (
 )
 
 type CallbackService interface {
+	// Run is the main loop of the callbackService. It listens for callback requests on the sendCh channel
+	// and dispatches them to all registered listeners. The loop will continue until the provided context is canceled.
 	Run(ctx context.Context)
 
+	// prepareListenersData processes the callback request and prepares listener data
+	// Returns a slice of listeners, serialized data, and any error encountered
 	prepareListenersData(ctx context.Context, req *CallbackRequest) ([]*listeners.Listener, []byte, error)
 }
 
@@ -44,8 +48,6 @@ func New(
 	}
 }
 
-// Run is the main loop of the callbackService. It listens for callback requests on the sendCh channel
-// and dispatches them to all registered listeners. The loop will continue until the provided context is canceled.
 func (s *callbackService) Run(ctx context.Context) {
 	for {
 		select {

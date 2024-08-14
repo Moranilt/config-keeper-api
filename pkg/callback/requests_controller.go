@@ -18,6 +18,13 @@ const (
 )
 
 type RequestsController interface {
+	// SendRequestWithRetry sends the given data to the specified endpoint, retrying up to MAX_RETRIES times if the request fails.
+	//
+	// It will use an exponential backoff strategy to delay between retries, with a minimum delay of BASE_DELAY and a maximum delay of MAX_DELAY.
+	//
+	// If the context is canceled during a retry, the function will return the context's error.
+	//
+	// If the maximum number of retries is reached, the function will return an error indicating that the maximum retries were exceeded.
 	SendRequestWithRetry(ctx context.Context, endpoint string, data []byte) error
 }
 

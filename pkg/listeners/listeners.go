@@ -18,13 +18,23 @@ type client struct {
 }
 
 type Client interface {
+	// Create creates a new listener in the database
 	Create(ctx context.Context, req *CreateRequest) (*Listener, tiny_errors.ErrorHandler)
+
+	// GetMany retrieves multiple listeners from the database
 	GetMany(ctx context.Context, req *GetManyRequest) ([]*Listener, tiny_errors.ErrorHandler)
+
+	// Get retrieves a single listener from the database
 	Get(ctx context.Context, req *GetRequest) (*Listener, tiny_errors.ErrorHandler)
+
+	// Delete removes a listener from the database
 	Delete(ctx context.Context, req *DeleteRequest) (bool, tiny_errors.ErrorHandler)
+
+	// Edit updates an existing listener in the database
 	Edit(ctx context.Context, req *EditRequest) (*Listener, tiny_errors.ErrorHandler)
 }
 
+// New creates a new Client implementation backed by the provided database.Client.
 func New(db *database.Client) Client {
 	return &client{
 		db: db,

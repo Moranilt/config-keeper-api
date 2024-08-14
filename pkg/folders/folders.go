@@ -18,14 +18,26 @@ type client struct {
 }
 
 type Client interface {
+	// Create creates a new folder.
 	Create(ctx context.Context, req *CreateRequest) (*Folder, tiny_errors.ErrorHandler)
+
+	// Exists checks if a folder exists.
 	Exists(ctx context.Context, req *ExistsRequest) (bool, tiny_errors.ErrorHandler)
+
+	// Get retrieves a folder with its path.
 	Get(ctx context.Context, req *GetRequest) (*FolderWithPath, tiny_errors.ErrorHandler)
+
+	// GetMany retrieves multiple folders.
 	GetMany(ctx context.Context, req *GetManyRequest) ([]*Folder, tiny_errors.ErrorHandler)
+
+	// Delete removes a folder.
 	Delete(ctx context.Context, req *DeleteRequest) (bool, tiny_errors.ErrorHandler)
+
+	// Edit modifies an existing folder.
 	Edit(ctx context.Context, req *EditRequest) (*Folder, tiny_errors.ErrorHandler)
 }
 
+// New creates a new instance of the Client interface using the provided database client.
 func New(db *database.Client) Client {
 	return &client{
 		db: db,

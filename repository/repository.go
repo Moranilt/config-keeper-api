@@ -54,6 +54,9 @@ func New(
 	}
 }
 
+// CreateFolder creates a new folder in the repository. If a folder with the same name and parent already exists, it returns an error.
+//
+// The function logs the request, starts a new trace span, clears the folder name, checks if the folder already exists, and creates a new folder if it doesn't. It returns the created folder's details in the response.
 func (repo *Repository) CreateFolder(ctx context.Context, req *models.CreateFolderRequest) (*models.CreateFolderResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	if req == nil {
@@ -203,6 +206,13 @@ func (repo *Repository) EditFolder(ctx context.Context, req *models.EditFolderRe
 	))
 	defer span.End()
 
+	clearName, err := utils.ClearName(req.Name)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "ClearName")
+		return nil, err
+	}
+
 	requiredFields := []utils.RequiredField{
 		{
 			Name:  "id",
@@ -210,7 +220,7 @@ func (repo *Repository) EditFolder(ctx context.Context, req *models.EditFolderRe
 		},
 		{
 			Name:  "name",
-			Value: req.Name,
+			Value: clearName,
 		},
 	}
 
@@ -224,7 +234,7 @@ func (repo *Repository) EditFolder(ctx context.Context, req *models.EditFolderRe
 
 	folder, err := repo.folders.Edit(ctx, &folders.EditRequest{
 		ID:   req.FolderID,
-		Name: req.Name,
+		Name: clearName,
 	})
 	if err != nil {
 		span.RecordError(err)
@@ -308,9 +318,16 @@ func (repo *Repository) EditFile(ctx context.Context, req *models.EditFileReques
 	))
 	defer span.End()
 
+	clearName, err := utils.ClearName(req.Name)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "ClearName")
+		return nil, err
+	}
+
 	file, err := repo.files.Edit(ctx, &files.EditRequest{
 		FileID: req.FileID,
-		Name:   req.Name,
+		Name:   clearName,
 	})
 	if err != nil {
 		span.RecordError(err)

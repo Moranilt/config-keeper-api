@@ -21,7 +21,7 @@ func TestPrepareListenersData(t *testing.T) {
 	mockContent := file_contents.NewMock()
 	mockListeners := listeners.NewMock()
 	mockLog := logger.NewMock()
-	sendChannel := NewChannel()
+	sendChannel := NewChannel(1)
 	// Create service with mocks
 	service := New(mockLog, sendChannel, mockFile, mockListeners, mockContent, nil)
 

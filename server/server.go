@@ -32,8 +32,14 @@ import (
 
 const (
 	DB_DRIVER_NAME = "postgres"
+
+	CALLBACK_CAPACITY = 10
 )
 
+// Run is the main entry point for the application. It sets up the necessary
+// dependencies, runs database migrations, and starts the HTTP server. It also
+// sets up a tracer, a callback service, and an error group to manage the
+// shutdown of the server and tracer.
 func Run(ctx context.Context) {
 	log := logger.New(os.Stdout, logger.TYPE_DEFAULT)
 	logger.SetDefault(log)
@@ -67,7 +73,7 @@ func Run(ctx context.Context) {
 	fileContentClient := file_contents.New(db)
 	listenersClient := listeners.New(db)
 
-	callbackChannel := callback.NewChannel()
+	callbackChannel := callback.NewChannel(CALLBACK_CAPACITY)
 
 	repo := repository.New(db, callbackChannel, foldersClient, filesClient, fileContentClient, listenersClient, log)
 	svc := service.New(log, repo)
