@@ -1,46 +1,151 @@
 package models
 
 import (
-	"mime/multipart"
-
-	"github.com/Moranilt/http-utils/tiny_errors"
+	"github.com/Moranilt/config-keeper/pkg/content_formats"
+	"github.com/Moranilt/config-keeper/pkg/file_contents"
+	"github.com/Moranilt/config-keeper/pkg/files"
+	"github.com/Moranilt/config-keeper/pkg/folders"
+	"github.com/Moranilt/config-keeper/pkg/listeners"
 )
 
-type TestRequest struct {
-	Firstname  string  `json:"fistname"`
-	Lastname   string  `json:"lastname"`
-	Patronymic *string `json:"patronymic"`
+type CreateFolderRequest struct {
+	Name     string  `json:"name"`
+	ParentID *string `json:"parent_id"`
 }
 
-type TestResponse struct {
-	ID string `json:"id"`
+type CreateFolderResponse folders.Folder
+
+type GetFolderRequest struct {
+	FolderID    string  `mapstructure:"folder_id"`
+	OrderColumn *string `mapstructure:"order_column"`
+	OrderType   *string `mapstructure:"order_type"`
 }
 
-type FileRequest struct {
-	Name        string                  `mapstructure:"name"`
-	Files       []*multipart.FileHeader `mapstructure:"file"`
-	OneMoreFile *multipart.FileHeader   `mapstructure:"one_more_file"`
+type GetFolderResponse struct {
+	ID        string            `json:"id"`
+	Name      string            `json:"name"`
+	ParentID  *string           `json:"parent_id"`
+	CreatedAt string            `json:"created_at"`
+	UpdatedAt string            `json:"updated_at"`
+	Path      string            `json:"path"`
+	Folders   []*folders.Folder `json:"folders"`
+	Files     []*files.File     `json:"files"`
 }
 
-type FileResponse struct {
-	Name        string                  `mapstructure:"name" json:"name"`
-	Files       []*multipart.FileHeader `mapstructure:"file[]" json:"files"`
-	OneMoreFile *multipart.FileHeader   `mapstructure:"one_more_file" json:"one_more_file"`
+type DeleteFolderRequest struct {
+	FolderID string `mapstructure:"folder_id"`
 }
 
-const (
-	_ = iota
-	ERR_CODE_Database
-	ERR_CODE_Marshal
-	ERR_CODE_Redis
-	ERR_CODE_RabbitMQ
-	ERR_CODE_BodyRequired
-)
+type DeleteFolderResponse struct {
+	Status bool `json:"status"`
+}
 
-const (
-	ERR_BodyRequired = "required body is missing"
-)
+type EditFolderRequest struct {
+	FolderID string `mapstructure:"folder_id"`
+	Name     string `json:"name"`
+}
 
-var (
-	ERR_BodyRequiredTiny = tiny_errors.New(ERR_CODE_BodyRequired, tiny_errors.Message(ERR_BodyRequired))
-)
+type EditFolderResponse folders.Folder
+
+type CreateFileRequest struct {
+	Name     string  `json:"name"`
+	FolderID *string `json:"folder_id"`
+}
+
+type CreateFileResponse files.File
+
+type DeleteFileRequest struct {
+	ID string `mapstructure:"id"`
+}
+
+type DeleteFileResponse struct {
+	Status bool `json:"status"`
+}
+
+type EditFileRequest struct {
+	FileID string `mapstructure:"file_id"`
+	Name   string `json:"name"`
+}
+
+type EditFileResponse files.File
+
+type GetFileRequest struct {
+	FileID string `mapstructure:"file_id"`
+}
+
+type GetFileResponse struct {
+	files.File
+	Contents []*file_contents.FileContent `json:"contents"`
+}
+
+type CreateFileContentRequest struct {
+	FileID   string `mapstructure:"file_id"`
+	Version  string `json:"version"`
+	Content  string `json:"content"`
+	FormatID string `json:"format_id"`
+}
+
+type CreateFileContentResponse file_contents.FileContent
+
+type GetFileContentsRequest struct {
+	FileID  string  `mapstructure:"file_id"`
+	Version *string `mapstructure:"version"`
+}
+
+type GetFileContentsResponse []*file_contents.FileContent
+
+type EditFileContentRequest struct {
+	ContentID string  `mapstructure:"content_id"`
+	Version   *string `json:"version"`
+	Content   *string `json:"content"`
+}
+
+type EditFileContentResponse file_contents.FileContent
+
+type DeleteFileContentRequest struct {
+	ContentID string `mapstructure:"content_id"`
+}
+
+type DeleteFileContentResponse struct {
+	Status bool `json:"status"`
+}
+
+type CreateListenerRequest struct {
+	FileID           string `mapstructure:"file_id"`
+	Name             string `json:"name"`
+	CallbackEndpoint string `json:"callback_endpoint"`
+}
+
+type CreateListenerResponse listeners.Listener
+
+type GetListenerRequest struct {
+	ListenerID string `mapstructure:"listener_id"`
+}
+
+type GetListenerResponse listeners.Listener
+
+type GetFileListenersRequest struct {
+	FileID string `mapstructure:"file_id"`
+}
+
+type GetFileListenersResponse []*listeners.Listener
+
+type EditListenerRequest struct {
+	ListenerID       string  `mapstructure:"listener_id"`
+	Name             *string `json:"name"`
+	CallbackEndpoint *string `json:"callback_endpoint"`
+}
+
+type EditListenerResponse listeners.Listener
+
+type DeleteListenerRequest struct {
+	ListenerID string `mapstructure:"listener_id"`
+}
+
+type DeleteListenerResponse struct {
+	Status bool `json:"status"`
+}
+
+type GetContentFormatsRequest struct{}
+
+type GetContentFormatsResponse []*content_formats.ContentFormat

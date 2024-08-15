@@ -1,0 +1,10 @@
+CREATE TABLE folders (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  parent_id UUID DEFAULT NULL,
+  name VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (parent_id) REFERENCES folders(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_folders_parent_id ON folders (parent_id);

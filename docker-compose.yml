@@ -1,4 +1,13 @@
 services:
+  db:
+      image: postgres
+      ports:
+        - "5432:5432"
+      environment:
+        - POSTGRES_USER=root
+        - POSTGRES_PASSWORD=123456
+        - POSTGRES_DB=config-keeper
+        
   jaeger:
     container_name: jaeger
     image: jaegertracing/all-in-one:latest
@@ -9,60 +18,3 @@ services:
       - "6831:6831/udp"
       - "14268:14268"
 
-  vault:
-    image: hashicorp/vault
-    ports:
-      - "8200:8200"
-    cap_add:
-      - IPC_LOCK
-    environment:
-      - VAULT_DEV_ROOT_TOKEN_ID=myroot
-      - VAULT_TOKEN=myroot
-      - VAULT_API_ADDR=http://localhost:8200
-      - VAULT_ADDR=http://localhost:8200
-    networks:
-      - vault_init
-
-  vault_init:
-    image: hashicorp/vault
-    depends_on:
-      - vault
-    restart: on-failure
-    environment:
-      - VAULT_TOKEN=myroot
-      - VAULT_API_ADDR=http://vault:8200
-      - VAULT_ADDR=http://vault:8200
-    volumes:
-      - ./config/local/vault/policy/test_policy.hcl:/policies/test_policy.hcl:ro
-      - ./config/local/vault/db_config.json:/tmp/db_config.json:ro
-    command: >
-     sh -c "vault policy write test-policy /policies/test_policy.hcl &&
-      vault token create -policy=test-policy -id test-token &&
-      vault kv put -mount=secret test/db @/tmp/db_config.json"
-    networks:
-      - vault_init
-      
-  mongo:
-    image: mongo:latest
-    restart: always
-    ports:
-      - 27017:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: 123456
-
-  mongo-express:
-    image: mongo-express
-    restart: always
-    ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: 123456
-      ME_CONFIG_BASICAUTH_USERNAME: root
-      ME_CONFIG_BASICAUTH_PASSWORD: 123456
-      ME_CONFIG_MONGODB_URL: mongodb://root:123456@mongo:27017/
-
-networks:
-  vault_init:
-    driver: bridge
