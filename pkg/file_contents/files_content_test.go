@@ -31,17 +31,18 @@ func TestClient_CreateFileContent(t *testing.T) {
 		{
 			name: "success",
 			req: &CreateRequest{
-				FileID:  "file_id",
-				Version: "v1.0.0",
-				Content: "content",
+				FileID:   "file_id",
+				Version:  "v1.0.0",
+				Content:  "content",
+				FormatID: "format_id",
 			},
 			mockSetup: func() {
 				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_GET_FILES_CONTENT_ID_BY_VERSION)).WithArgs("file_id", "v1.0.0").WillReturnRows(
 					sqlMock.NewRows([]string{"id"}),
 				)
-				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_CREATE_CONTENT)).WithArgs("file_id", "v1.0.0", "content").WillReturnRows(
-					sqlMock.NewRows([]string{"id", "file_id", "version", "content", "created_at", "updated_at"}).
-						AddRow("file_content_id", "file_id", "v1.0.0", "content", "file_content_created_at", "file_content_updated_at"),
+				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_CREATE_CONTENT)).WithArgs("file_id", "v1.0.0", "content", "format_id").WillReturnRows(
+					sqlMock.NewRows([]string{"id", "file_id", "version", "format", "content", "created_at", "updated_at"}).
+						AddRow("file_content_id", "file_id", "v1.0.0", "yaml", "content", "file_content_created_at", "file_content_updated_at"),
 				)
 			},
 			expectedResult: &FileContent{
@@ -49,6 +50,7 @@ func TestClient_CreateFileContent(t *testing.T) {
 				FileID:    "file_id",
 				Version:   "v1.0.0",
 				Content:   "content",
+				Format:    "yaml",
 				CreatedAt: "file_content_created_at",
 				UpdatedAt: "file_content_updated_at",
 			},
@@ -64,15 +66,16 @@ func TestClient_CreateFileContent(t *testing.T) {
 		{
 			name: "sql error",
 			req: &CreateRequest{
-				FileID:  "file_id",
-				Version: "v1.0.0",
-				Content: "content",
+				FileID:   "file_id",
+				Version:  "v1.0.0",
+				Content:  "content",
+				FormatID: "format_id",
 			},
 			mockSetup: func() {
 				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_GET_FILES_CONTENT_ID_BY_VERSION)).WithArgs("file_id", "v1.0.0").WillReturnRows(
 					sqlMock.NewRows([]string{"id"}),
 				)
-				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_CREATE_CONTENT)).WithArgs("file_id", "v1.0.0", "content").WillReturnError(
+				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_CREATE_CONTENT)).WithArgs("file_id", "v1.0.0", "content", "format_id").WillReturnError(
 					assert.AnError,
 				)
 			},
@@ -82,9 +85,10 @@ func TestClient_CreateFileContent(t *testing.T) {
 		{
 			name: "content already exists",
 			req: &CreateRequest{
-				FileID:  "file_id",
-				Version: "v1.0.0",
-				Content: "content",
+				FileID:   "file_id",
+				Version:  "v1.0.0",
+				Content:  "content",
+				FormatID: "format_id",
 			},
 			mockSetup: func() {
 				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_GET_FILES_CONTENT_ID_BY_VERSION)).WithArgs("file_id", "v1.0.0").WillReturnRows(
@@ -97,9 +101,10 @@ func TestClient_CreateFileContent(t *testing.T) {
 		{
 			name: "empty fields in request",
 			req: &CreateRequest{
-				FileID:  "",
-				Version: "",
-				Content: "",
+				FileID:   "",
+				Version:  "",
+				Content:  "",
+				FormatID: "",
 			},
 			mockSetup:      func() {},
 			expectedResult: nil,
@@ -107,6 +112,7 @@ func TestClient_CreateFileContent(t *testing.T) {
 				tiny_errors.Detail("file_id", "required"),
 				tiny_errors.Detail("version", "required"),
 				tiny_errors.Detail("content", "required"),
+				tiny_errors.Detail("format_id", "required"),
 			),
 		},
 	}
@@ -118,10 +124,10 @@ func TestClient_CreateFileContent(t *testing.T) {
 			fileContent, err := client.Create(context.Background(), tt.req)
 
 			if tt.expectedError != nil {
-				assert.Error(t, err)
-				assert.Equal(t, tt.expectedError.GetCode(), err.GetCode())
-				assert.Equal(t, tt.expectedError.GetMessage(), err.GetMessage())
-				assert.Equal(t, tt.expectedError.GetDetails(), err.GetDetails())
+				assert.Error(t, err, "error")
+				assert.Equal(t, tt.expectedError.GetCode(), err.GetCode(), "error code")
+				assert.Equal(t, tt.expectedError.GetMessage(), err.GetMessage(), "error message")
+				assert.Equal(t, tt.expectedError.GetDetails(), err.GetDetails(), "error details")
 			} else {
 				assert.NoError(t, err)
 			}

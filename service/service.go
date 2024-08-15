@@ -37,11 +37,16 @@ type ListenersService interface {
 	DeleteListener(w http.ResponseWriter, r *http.Request)
 }
 
+type ContentFormatsService interface {
+	GetContentFormats(w http.ResponseWriter, r *http.Request)
+}
+
 type Service interface {
 	FolderService
 	FileService
 	FileContentServices
 	ListenersService
+	ContentFormatsService
 }
 
 type service struct {
@@ -163,5 +168,10 @@ func (s *service) EditListener(w http.ResponseWriter, r *http.Request) {
 func (s *service) DeleteListener(w http.ResponseWriter, r *http.Request) {
 	handler.New(w, r, s.log, s.repo.DeleteListener).
 		WithVars().
+		Run(http.StatusOK)
+}
+
+func (s *service) GetContentFormats(w http.ResponseWriter, r *http.Request) {
+	handler.New(w, r, s.log, s.repo.GetContentFormats).
 		Run(http.StatusOK)
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/Moranilt/config-keeper/custom_errors"
 	"github.com/Moranilt/config-keeper/models"
 	"github.com/Moranilt/config-keeper/pkg/callback"
+	"github.com/Moranilt/config-keeper/pkg/content_formats"
 	"github.com/Moranilt/config-keeper/pkg/file_contents"
 	"github.com/Moranilt/config-keeper/pkg/files"
 	"github.com/Moranilt/config-keeper/pkg/folders"
@@ -23,14 +24,15 @@ import (
 const TracerName string = "repository"
 
 type Repository struct {
-	db          *database.Client
-	log         logger.Logger
-	tracer      trace.Tracer
-	folders     folders.Client
-	files       files.Client
-	fileContent file_contents.Client
-	listeners   listeners.Client
-	callback    callback.CallbackChannel
+	db             *database.Client
+	log            logger.Logger
+	tracer         trace.Tracer
+	folders        folders.Client
+	files          files.Client
+	fileContent    file_contents.Client
+	listeners      listeners.Client
+	callback       callback.CallbackChannel
+	contentFormats content_formats.Client
 }
 
 func New(
@@ -40,17 +42,19 @@ func New(
 	files files.Client,
 	fileContent file_contents.Client,
 	listeners listeners.Client,
+	contentFormats content_formats.Client,
 	logger logger.Logger,
 ) *Repository {
 	return &Repository{
-		db:          db,
-		log:         logger,
-		tracer:      otel.Tracer(TracerName),
-		folders:     folders,
-		files:       files,
-		fileContent: fileContent,
-		listeners:   listeners,
-		callback:    callback,
+		db:             db,
+		log:            logger,
+		tracer:         otel.Tracer(TracerName),
+		folders:        folders,
+		files:          files,
+		fileContent:    fileContent,
+		listeners:      listeners,
+		callback:       callback,
+		contentFormats: contentFormats,
 	}
 }
 
@@ -373,13 +377,15 @@ func (repo *Repository) CreateFileContent(ctx context.Context, req *models.Creat
 	ctx, span := repo.tracer.Start(ctx, "CreateFileContent", trace.WithAttributes(
 		attribute.String("file_id", req.FileID),
 		attribute.String("version", req.Version),
+		attribute.String("format_id", req.FormatID),
 	))
 	defer span.End()
 
 	filesContent, err := repo.fileContent.Create(ctx, &file_contents.CreateRequest{
-		FileID:  req.FileID,
-		Content: req.Content,
-		Version: req.Version,
+		FileID:   req.FileID,
+		Content:  req.Content,
+		Version:  req.Version,
+		FormatID: req.FormatID,
 	})
 	if err != nil {
 		span.RecordError(err)
@@ -554,4 +560,19 @@ func (repo *Repository) DeleteListener(ctx context.Context, req *models.DeleteLi
 	return &models.DeleteListenerResponse{
 		Status: removed,
 	}, nil
+}
+
+func (repo *Repository) GetContentFormats(ctx context.Context, req *models.GetContentFormatsRequest) (*models.GetContentFormatsResponse, tiny_errors.ErrorHandler) {
+	repo.log.InfoContext(context.Background(), TracerName)
+	ctx, span := repo.tracer.Start(context.Background(), "GetContentFormats")
+	defer span.End()
+
+	contentFormats, err := repo.contentFormats.GetMany(ctx)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "GetMany")
+		return nil, err
+	}
+
+	return (*models.GetContentFormatsResponse)(&contentFormats), nil
 }

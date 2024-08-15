@@ -49,6 +49,7 @@ func (c *client) Create(ctx context.Context, req *CreateRequest) (*FileContent, 
 		{Name: "file_id", Value: req.FileID},
 		{Name: "content", Value: req.Content},
 		{Name: "version", Value: req.Version},
+		{Name: "format_id", Value: req.FormatID},
 	}
 
 	requiredErr := utils.ValidateRequiredFields(requiredFields)
@@ -67,7 +68,7 @@ func (c *client) Create(ctx context.Context, req *CreateRequest) (*FileContent, 
 	}
 
 	var fileContent FileContent
-	err = c.db.QueryRowxContext(ctx, QUERY_CREATE_CONTENT, req.FileID, req.Version, req.Content).StructScan(&fileContent)
+	err = c.db.QueryRowxContext(ctx, QUERY_CREATE_CONTENT, req.FileID, req.Version, req.Content, req.FormatID).StructScan(&fileContent)
 	if err != nil {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}

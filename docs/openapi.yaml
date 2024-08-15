@@ -27,6 +27,8 @@ tags:
     description: File contents
   - name: Listeners
     description: File listeners which will be called when any content was updated
+  - name: Content Formats
+    description: Formats of content to determine which parser we should use to display it(yaml, json etc.)
 
 paths:
   /folders:
@@ -282,6 +284,17 @@ paths:
         '200':
           $ref: '#/components/responses/Get_Listener_Success'
           
+          
+  /formats:
+    get:
+      tags: ["Content Formats"]
+      summary: A list of allowed formats
+      operationId: getContentFormats
+      description: Get a list of allowed formats
+      responses:
+        '200':
+          $ref: '#/components/responses/Get_Content_Formats'
+      
       
 components:
   schemas:
@@ -368,6 +381,10 @@ components:
         file_id:
           type: string
           format: uuid
+        format:
+          type: string
+          enum: ["yaml", "toml", "json", "env"]
+          description: format of content. Can be yaml, romls, json, env etc.
         created_at:
           type: string
           format: date-time
@@ -396,6 +413,17 @@ components:
         updated_at:
           type: string
           format: date-time
+
+    Content_Format:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          enum: ["yaml", "toml", "json", "env"]
+          
 
   requestBodies:
     Create_Folder:
@@ -463,6 +491,10 @@ components:
               content:
                 type: string
                 example: "your config in any format"
+              format_id:
+                type: string
+                format:  uuid
+                description: UUID of file format
                 
     Edit_File_Content:
       required: true
@@ -478,6 +510,10 @@ components:
               content:
                 type: string
                 example: "your config in any format"
+                nullable: true
+              format:
+                type: string
+                enum: ["yaml", "toml", "json", "env"]
                 nullable: true
                 
     Create_Listener:
@@ -743,3 +779,19 @@ components:
                     properties:
                       status:
                         type: boolean
+                        
+    Get_Content_Formats:
+      description: A list of allowed formats
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: array
+                    minItems: 2
+                    maxItems: 5
+                    items:
+                      $ref: '#/components/schemas/Content_Format'

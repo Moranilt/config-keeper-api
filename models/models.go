@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/Moranilt/config-keeper/pkg/content_formats"
 	"github.com/Moranilt/config-keeper/pkg/file_contents"
 	"github.com/Moranilt/config-keeper/pkg/files"
 	"github.com/Moranilt/config-keeper/pkg/folders"
@@ -78,9 +79,10 @@ type GetFileResponse struct {
 }
 
 type CreateFileContentRequest struct {
-	FileID  string `mapstructure:"file_id"`
-	Version string `json:"version"`
-	Content string `json:"content"`
+	FileID   string `mapstructure:"file_id"`
+	Version  string `json:"version"`
+	Content  string `json:"content"`
+	FormatID string `json:"format_id"`
 }
 
 type CreateFileContentResponse file_contents.FileContent
@@ -143,3 +145,7 @@ type DeleteListenerRequest struct {
 type DeleteListenerResponse struct {
 	Status bool `json:"status"`
 }
+
+type GetContentFormatsRequest struct{}
+
+type GetContentFormatsResponse []*content_formats.ContentFormat

@@ -103,6 +103,11 @@ func MakeEndpoints(service service.Service, mw *middleware.Middleware) []Endpoin
 			HandleFunc: service.DeleteListener,
 			Methods:    []string{http.MethodDelete},
 		},
+		{
+			Pattern:    "/formats",
+			HandleFunc: service.GetContentFormats,
+			Methods:    []string{http.MethodGet},
+		},
 	}
 }
 
