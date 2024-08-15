@@ -10,7 +10,6 @@ import (
 	"github.com/Moranilt/http-utils/clients/database"
 	"github.com/Moranilt/http-utils/query"
 	"github.com/Moranilt/http-utils/tiny_errors"
-	"github.com/jmoiron/sqlx"
 )
 
 type client struct {
@@ -49,15 +48,10 @@ func (c *client) Create(ctx context.Context, req *CreateRequest) (*Folder, tiny_
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
 	}
 
-	row := c.db.QueryRowxContext(ctx, QUERY_INSERT_FOLDER, req.Name, req.ParentID)
-	if row.Err() != nil {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
-	}
-
 	var folder Folder
-	err := row.StructScan(&folder)
+	err := c.db.QueryRowxContext(ctx, QUERY_INSERT_FOLDER, req.Name, req.ParentID).StructScan(&folder)
 	if err != nil {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Marshal, tiny_errors.Message(err.Error()))
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
 
 	return &folder, nil
@@ -68,10 +62,6 @@ func (c *client) Exists(ctx context.Context, req *ExistsRequest) (bool, tiny_err
 		return false, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
 	}
 
-	var (
-		row *sqlx.Row
-		id  string
-	)
 	preparedQuery := query.New(QUERY_DEFAULT_SELECT_FOLDERS_ID)
 	if req.ParentID == nil {
 		preparedQuery.Where().IS("parent_id", nil)
@@ -83,18 +73,13 @@ func (c *client) Exists(ctx context.Context, req *ExistsRequest) (bool, tiny_err
 		preparedQuery.Where().EQ("name", req.Name)
 	}
 
-	row = c.db.QueryRowxContext(ctx, preparedQuery.String())
-
-	if row.Err() != nil {
-		return false, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
-	}
-
-	err := row.Scan(&id)
+	var id string
+	err := c.db.QueryRowxContext(ctx, preparedQuery.String()).Scan(&id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
 		}
-		return false, tiny_errors.New(custom_errors.ERR_CODE_Marshal, tiny_errors.Message(err.Error()))
+		return false, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
 
 	return true, nil
@@ -187,38 +172,28 @@ func (c *client) Edit(ctx context.Context, req *EditRequest) (*Folder, tiny_erro
 		)
 	}
 
-	row := c.db.QueryRowxContext(
+	var exists bool
+	err := c.db.QueryRowxContext(
 		ctx,
 		QUERY_CHECK_FOLDER_EXISTS_BY_PARENT_ID_AND_NAME,
 		req.Name,
 		req.ID,
-	)
-	if row.Err() != nil {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
-	}
-
-	var exists bool
-	err := row.Scan(&exists)
+	).Scan(&exists)
 	if err != nil {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Marshal, tiny_errors.Message(err.Error()))
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
 
 	if exists {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Exists, tiny_errors.Message("folder with such name already exists"))
 	}
 
-	row = c.db.QueryRowxContext(ctx, QUERY_UPDATE_FOLDER, req.Name, req.ID)
-	if row.Err() != nil {
-		if row.Err() == sql.ErrNoRows {
+	var folder Folder
+	err = c.db.QueryRowxContext(ctx, QUERY_UPDATE_FOLDER, req.Name, req.ID).StructScan(&folder)
+	if err != nil {
+		if err == sql.ErrNoRows {
 			return nil, tiny_errors.New(custom_errors.ERR_CODE_NotFound, tiny_errors.HTTPStatus(http.StatusNotFound))
 		}
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
-	}
-
-	var folder Folder
-	err = row.StructScan(&folder)
-	if err != nil {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Marshal, tiny_errors.Message(err.Error()))
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
 
 	return &folder, nil

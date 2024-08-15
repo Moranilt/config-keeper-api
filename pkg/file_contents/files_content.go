@@ -56,13 +56,8 @@ func (c *client) Create(ctx context.Context, req *CreateRequest) (*FileContent, 
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, requiredErr...)
 	}
 
-	row := c.db.QueryRowxContext(ctx, QUERY_GET_FILES_CONTENT_ID_BY_VERSION, req.FileID, req.Version)
-	if row.Err() != nil && row.Err() != sql.ErrNoRows {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
-	}
-
 	var id string
-	err := row.Scan(&id)
+	err := c.db.GetContext(ctx, &id, QUERY_GET_FILES_CONTENT_ID_BY_VERSION, req.FileID, req.Version)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
@@ -71,13 +66,8 @@ func (c *client) Create(ctx context.Context, req *CreateRequest) (*FileContent, 
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Exists, tiny_errors.Message("file content already exists"))
 	}
 
-	row = c.db.QueryRowxContext(ctx, QUERY_CREATE_CONTENT, req.FileID, req.Version, req.Content)
-	if row.Err() != nil {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
-	}
-
 	var fileContent FileContent
-	err = row.StructScan(&fileContent)
+	err = c.db.QueryRowxContext(ctx, QUERY_CREATE_CONTENT, req.FileID, req.Version, req.Content).StructScan(&fileContent)
 	if err != nil {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
@@ -123,13 +113,9 @@ func (c *client) Edit(ctx context.Context, req *EditRequest) (*FileContent, tiny
 
 	contentQuery := query.New(QUERY_GET_FILE_CONTENTS_ID)
 	contentQuery.Where().EQ("id", req.FileContentID)
-	row := c.db.QueryRowxContext(ctx, contentQuery.String())
-	if row.Err() != nil && row.Err() != sql.ErrNoRows {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
-	}
 
 	var id string
-	err := row.Scan(&id)
+	err := c.db.GetContext(ctx, &id, contentQuery.String())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
@@ -138,6 +124,7 @@ func (c *client) Edit(ctx context.Context, req *EditRequest) (*FileContent, tiny
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_NotFound, tiny_errors.Message("file content does not exist"))
 	}
 
+	// TODO: refactor update query
 	var queryUpdate strings.Builder
 	queryUpdate.WriteString("UPDATE file_contents SET ")
 	var setters []string
@@ -154,13 +141,8 @@ func (c *client) Edit(ctx context.Context, req *EditRequest) (*FileContent, tiny
 	queryUpdate.WriteString(fmt.Sprintf(" WHERE id = '%s'", req.FileContentID))
 	queryUpdate.WriteString(" RETURNING id, file_id, version, content, created_at, updated_at")
 
-	row = c.db.QueryRowxContext(ctx, queryUpdate.String())
-	if row.Err() != nil {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
-	}
-
 	var fileContent FileContent
-	err = row.StructScan(&fileContent)
+	err = c.db.QueryRowxContext(ctx, queryUpdate.String()).StructScan(&fileContent)
 	if err != nil {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}

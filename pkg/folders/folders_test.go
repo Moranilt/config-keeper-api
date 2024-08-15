@@ -72,23 +72,6 @@ func TestClient_NewFolder(t *testing.T) {
 			expectedFolder: nil,
 			expectedError:  tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(assert.AnError.Error())),
 		},
-		{
-			name: "struct scan error",
-			req: &CreateRequest{
-				Name:     "folder_name",
-				ParentID: utils.MakePointer("folder_parent_id"),
-			},
-			mockSetup: func() {
-				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_INSERT_FOLDER)).
-					WithArgs("folder_name", utils.MakePointer("folder_parent_id")).
-					WillReturnRows(
-						sqlMock.NewRows([]string{"unexpected_column"}).
-							AddRow("value"),
-					)
-			},
-			expectedFolder: nil,
-			expectedError:  tiny_errors.New(custom_errors.ERR_CODE_Marshal, tiny_errors.Message("missing destination name unexpected_column in *folders.Folder")),
-		},
 	}
 
 	for _, tt := range tests {

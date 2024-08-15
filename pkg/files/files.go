@@ -53,9 +53,9 @@ func (c *client) GetMany(ctx context.Context, req *GetManyRequest) ([]*File, tin
 		if *req.Order.Type == query.DESC || *req.Order.Type == query.ASC {
 			order = *req.Order.Type
 		}
-		preparedQuery = preparedQuery.Order(*req.Order.Column, order)
+		preparedQuery.Order(*req.Order.Column, order)
 	} else {
-		preparedQuery = preparedQuery.Order("name", query.ASC)
+		preparedQuery.Order("name", query.ASC)
 	}
 
 	if req.FolderID == nil {
@@ -95,13 +95,8 @@ func (c *client) Create(ctx context.Context, req *CreateRequest) (*File, tiny_er
 		preparedQuery.Where().IS("folder_id", nil)
 	}
 
-	row := c.db.QueryRowxContext(ctx, preparedQuery.String())
-	if row.Err() != nil && row.Err() != sql.ErrNoRows {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
-	}
-
 	var existsFile File
-	err := row.StructScan(&existsFile)
+	err := c.db.GetContext(ctx, &existsFile, preparedQuery.String())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
@@ -110,13 +105,8 @@ func (c *client) Create(ctx context.Context, req *CreateRequest) (*File, tiny_er
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Exists, tiny_errors.Message("file already exists"))
 	}
 
-	row = c.db.QueryRowxContext(ctx, QUERY_CREATE_FILE, req.FolderID, req.Name)
-	if row.Err() != nil {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
-	}
-
 	var file File
-	err = row.StructScan(&file)
+	err = c.db.QueryRowxContext(ctx, QUERY_CREATE_FILE, req.FolderID, req.Name).StructScan(&file)
 	if err != nil {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
@@ -176,38 +166,28 @@ func (c *client) Edit(ctx context.Context, req *EditRequest) (*File, tiny_errors
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, errFields...)
 	}
 
-	row := c.db.QueryRowxContext(
+	var exists bool
+	err := c.db.QueryRowxContext(
 		ctx,
 		QUERY_CHECK_FILE_EXISTS_BY_FOLDER_ID_AND_NAME,
 		req.Name,
 		req.FileID,
-	)
-	if row.Err() != nil {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
-	}
-
-	var exists bool
-	err := row.Scan(&exists)
+	).Scan(&exists)
 	if err != nil {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Marshal, tiny_errors.Message(err.Error()))
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
 
 	if exists {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Exists, tiny_errors.Message("file with such name already exists"))
 	}
 
-	row = c.db.QueryRowxContext(ctx, QUERY_UPDATE_FILE, req.Name, req.FileID)
-	if row.Err() != nil {
-		if row.Err() == sql.ErrNoRows {
+	var folder File
+	err = c.db.QueryRowxContext(ctx, QUERY_UPDATE_FILE, req.Name, req.FileID).StructScan(&folder)
+	if err != nil {
+		if err == sql.ErrNoRows {
 			return nil, tiny_errors.New(custom_errors.ERR_CODE_NotFound, tiny_errors.HTTPStatus(http.StatusNotFound))
 		}
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
-	}
-
-	var folder File
-	err = row.StructScan(&folder)
-	if err != nil {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_Marshal, tiny_errors.Message(err.Error()))
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
 
 	return &folder, nil

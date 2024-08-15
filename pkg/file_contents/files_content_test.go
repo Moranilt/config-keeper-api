@@ -37,7 +37,7 @@ func TestClient_CreateFileContent(t *testing.T) {
 			},
 			mockSetup: func() {
 				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_GET_FILES_CONTENT_ID_BY_VERSION)).WithArgs("file_id", "v1.0.0").WillReturnRows(
-					sqlMock.NewRows([]string{"id", "file_id", "version", "content", "created_at", "updated_at"}),
+					sqlMock.NewRows([]string{"id"}),
 				)
 				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_CREATE_CONTENT)).WithArgs("file_id", "v1.0.0", "content").WillReturnRows(
 					sqlMock.NewRows([]string{"id", "file_id", "version", "content", "created_at", "updated_at"}).
@@ -70,7 +70,7 @@ func TestClient_CreateFileContent(t *testing.T) {
 			},
 			mockSetup: func() {
 				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_GET_FILES_CONTENT_ID_BY_VERSION)).WithArgs("file_id", "v1.0.0").WillReturnRows(
-					sqlMock.NewRows([]string{"id", "file_id", "version", "content", "created_at", "updated_at"}),
+					sqlMock.NewRows([]string{"id"}),
 				)
 				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_CREATE_CONTENT)).WithArgs("file_id", "v1.0.0", "content").WillReturnError(
 					assert.AnError,
