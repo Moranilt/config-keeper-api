@@ -67,8 +67,10 @@ func (c *client) Create(ctx context.Context, req *CreateRequest) (*FileContent, 
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Exists, tiny_errors.Message("file content already exists"))
 	}
 
+	base64Content := utils.StringToBase64(req.Content)
+
 	var fileContent FileContent
-	err = c.db.QueryRowxContext(ctx, QUERY_CREATE_CONTENT, req.FileID, req.Version, req.Content, req.FormatID).StructScan(&fileContent)
+	err = c.db.QueryRowxContext(ctx, QUERY_CREATE_CONTENT, req.FileID, req.Version, base64Content, req.FormatID).StructScan(&fileContent)
 	if err != nil {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}

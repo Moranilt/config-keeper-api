@@ -40,16 +40,16 @@ func TestClient_CreateFileContent(t *testing.T) {
 				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_GET_FILES_CONTENT_ID_BY_VERSION)).WithArgs("file_id", "v1.0.0").WillReturnRows(
 					sqlMock.NewRows([]string{"id"}),
 				)
-				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_CREATE_CONTENT)).WithArgs("file_id", "v1.0.0", "content", "format_id").WillReturnRows(
+				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_CREATE_CONTENT)).WithArgs("file_id", "v1.0.0", utils.StringToBase64("content"), "format_id").WillReturnRows(
 					sqlMock.NewRows([]string{"id", "file_id", "version", "format", "content", "created_at", "updated_at"}).
-						AddRow("file_content_id", "file_id", "v1.0.0", "yaml", "content", "file_content_created_at", "file_content_updated_at"),
+						AddRow("file_content_id", "file_id", "v1.0.0", "yaml", utils.StringToBase64("content"), "file_content_created_at", "file_content_updated_at"),
 				)
 			},
 			expectedResult: &FileContent{
 				ID:        "file_content_id",
 				FileID:    "file_id",
 				Version:   "v1.0.0",
-				Content:   "content",
+				Content:   utils.StringToBase64("content"),
 				Format:    "yaml",
 				CreatedAt: "file_content_created_at",
 				UpdatedAt: "file_content_updated_at",
@@ -75,7 +75,7 @@ func TestClient_CreateFileContent(t *testing.T) {
 				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_GET_FILES_CONTENT_ID_BY_VERSION)).WithArgs("file_id", "v1.0.0").WillReturnRows(
 					sqlMock.NewRows([]string{"id"}),
 				)
-				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_CREATE_CONTENT)).WithArgs("file_id", "v1.0.0", "content", "format_id").WillReturnError(
+				sqlMock.ExpectQuery(regexp.QuoteMeta(QUERY_CREATE_CONTENT)).WithArgs("file_id", "v1.0.0", utils.StringToBase64("content"), "format_id").WillReturnError(
 					assert.AnError,
 				)
 			},
