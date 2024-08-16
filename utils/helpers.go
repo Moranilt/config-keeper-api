@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/base64"
 	"reflect"
 	"strings"
 
@@ -63,4 +64,8 @@ func ValidateRequiredFields(data []RequiredField) []tiny_errors.ErrorOption {
 		return options
 	}
 	return nil
+}
+
+func StringToBase64(str string) string {
+	return base64.StdEncoding.EncodeToString([]byte(str))
 }
