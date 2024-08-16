@@ -3,6 +3,7 @@ package file_contents
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -243,6 +244,7 @@ func TestClient_EditFileContents(t *testing.T) {
 	tiny_errors.Init(custom_errors.ERRORS)
 	mockDb, sqlMock := database_mock.NewSQlMock(t)
 	client := New(&database.Client{mockDb})
+	base64Content := utils.StringToBase64("content")
 
 	tests := []struct {
 		name            string
@@ -265,10 +267,10 @@ func TestClient_EditFileContents(t *testing.T) {
 					sqlMock.NewRows([]string{"id"}).AddRow("file_content_id"),
 				)
 
-				preparedQueryUpdate := "UPDATE file_contents SET updated_at = now(), version = 'v1.0.0', content = 'content' WHERE id = 'file_content_id' RETURNING id, file_id, version, content, created_at, updated_at"
+				preparedQueryUpdate := fmt.Sprintf("UPDATE file_contents SET updated_at = now(), version = 'v1.0.0', content = '%s' WHERE id = 'file_content_id' RETURNING id, file_id, version, content, created_at, updated_at", base64Content)
 				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQueryUpdate)).WillReturnRows(
 					sqlMock.NewRows([]string{"id", "file_id", "version", "content", "created_at", "updated_at"}).AddRow(
-						"file_content_id", "file_id", "v1.0.0", "content", "file_content_created_at", "file_content_updated_at",
+						"file_content_id", "file_id", "v1.0.0", base64Content, "file_content_created_at", "file_content_updated_at",
 					),
 				)
 			},
@@ -276,7 +278,7 @@ func TestClient_EditFileContents(t *testing.T) {
 				ID:        "file_content_id",
 				FileID:    "file_id",
 				Version:   "v1.0.0",
-				Content:   "content",
+				Content:   base64Content,
 				CreatedAt: "file_content_created_at",
 				UpdatedAt: "file_content_updated_at",
 			},
@@ -298,7 +300,7 @@ func TestClient_EditFileContents(t *testing.T) {
 				preparedQueryUpdate := "UPDATE file_contents SET updated_at = now(), version = 'v1.0.0' WHERE id = 'file_content_id' RETURNING id, file_id, version, content, created_at, updated_at"
 				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQueryUpdate)).WillReturnRows(
 					sqlMock.NewRows([]string{"id", "file_id", "version", "content", "created_at", "updated_at"}).AddRow(
-						"file_content_id", "file_id", "v1.0.0", "content", "file_content_created_at", "file_content_updated_at",
+						"file_content_id", "file_id", "v1.0.0", base64Content, "file_content_created_at", "file_content_updated_at",
 					),
 				)
 			},
@@ -306,7 +308,7 @@ func TestClient_EditFileContents(t *testing.T) {
 				ID:        "file_content_id",
 				FileID:    "file_id",
 				Version:   "v1.0.0",
-				Content:   "content",
+				Content:   base64Content,
 				CreatedAt: "file_content_created_at",
 				UpdatedAt: "file_content_updated_at",
 			},
@@ -325,10 +327,10 @@ func TestClient_EditFileContents(t *testing.T) {
 					sqlMock.NewRows([]string{"id"}).AddRow("file_content_id"),
 				)
 
-				preparedQueryUpdate := "UPDATE file_contents SET updated_at = now(), content = 'content' WHERE id = 'file_content_id' RETURNING id, file_id, version, content, created_at, updated_at"
+				preparedQueryUpdate := fmt.Sprintf("UPDATE file_contents SET updated_at = now(), content = '%s' WHERE id = 'file_content_id' RETURNING id, file_id, version, content, created_at, updated_at", base64Content)
 				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQueryUpdate)).WillReturnRows(
 					sqlMock.NewRows([]string{"id", "file_id", "version", "content", "created_at", "updated_at"}).AddRow(
-						"file_content_id", "file_id", "v1.0.0", "content", "file_content_created_at", "file_content_updated_at",
+						"file_content_id", "file_id", "v1.0.0", base64Content, "file_content_created_at", "file_content_updated_at",
 					),
 				)
 			},
@@ -336,7 +338,7 @@ func TestClient_EditFileContents(t *testing.T) {
 				ID:        "file_content_id",
 				FileID:    "file_id",
 				Version:   "v1.0.0",
-				Content:   "content",
+				Content:   base64Content,
 				CreatedAt: "file_content_created_at",
 				UpdatedAt: "file_content_updated_at",
 			},
@@ -378,7 +380,7 @@ func TestClient_EditFileContents(t *testing.T) {
 					sqlMock.NewRows([]string{"id"}).AddRow("file_content_id"),
 				)
 
-				preparedQueryUpdate := "UPDATE file_contents SET updated_at = now(), content = 'content' WHERE id = 'file_content_id' RETURNING id, file_id, version, content, created_at, updated_at"
+				preparedQueryUpdate := fmt.Sprintf("UPDATE file_contents SET updated_at = now(), content = '%s' WHERE id = 'file_content_id' RETURNING id, file_id, version, content, created_at, updated_at", base64Content)
 				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQueryUpdate)).WillReturnError(errors.New("sql error"))
 			},
 			expectedContent: nil,

@@ -138,7 +138,8 @@ func (c *client) Edit(ctx context.Context, req *EditRequest) (*FileContent, tiny
 	}
 
 	if req.Content != nil {
-		setters = append(setters, fmt.Sprintf("content = '%s'", *req.Content))
+		base64Content := utils.StringToBase64(*req.Content)
+		setters = append(setters, fmt.Sprintf("content = '%s'", base64Content))
 	}
 	queryUpdate.WriteString(strings.Join(setters, ", "))
 	queryUpdate.WriteString(fmt.Sprintf(" WHERE id = '%s'", req.FileContentID))
