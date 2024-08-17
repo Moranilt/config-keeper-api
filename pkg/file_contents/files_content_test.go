@@ -3,7 +3,6 @@ package file_contents
 import (
 	"context"
 	"errors"
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -267,8 +266,10 @@ func TestClient_EditFileContents(t *testing.T) {
 					sqlMock.NewRows([]string{"id"}).AddRow("file_content_id"),
 				)
 
-				preparedQueryUpdate := fmt.Sprintf("UPDATE file_contents SET updated_at = now(), version = 'v1.0.0', content = '%s' WHERE id = 'file_content_id' RETURNING id, file_id, version, content, created_at, updated_at", base64Content)
-				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQueryUpdate)).WillReturnRows(
+				preparedQueryUpdate := query.New("UPDATE file_contents").Set("updated_at", "now()").Set("version", "v1.0.0").Set("content", base64Content).
+					Where().EQ("id", "file_content_id").Query().
+					Returning("id", "file_id", "version", "content", "created_at", "updated_at")
+				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQueryUpdate.String())).WillReturnRows(
 					sqlMock.NewRows([]string{"id", "file_id", "version", "content", "created_at", "updated_at"}).AddRow(
 						"file_content_id", "file_id", "v1.0.0", base64Content, "file_content_created_at", "file_content_updated_at",
 					),
@@ -296,9 +297,10 @@ func TestClient_EditFileContents(t *testing.T) {
 				sqlMock.ExpectQuery(regexp.QuoteMeta(contentQuery.String())).WillReturnRows(
 					sqlMock.NewRows([]string{"id"}).AddRow("file_content_id"),
 				)
-
-				preparedQueryUpdate := "UPDATE file_contents SET updated_at = now(), version = 'v1.0.0' WHERE id = 'file_content_id' RETURNING id, file_id, version, content, created_at, updated_at"
-				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQueryUpdate)).WillReturnRows(
+				preparedQueryUpdate := query.New("UPDATE file_contents").Set("updated_at", "now()").Set("version", "v1.0.0").
+					Where().EQ("id", "file_content_id").Query().
+					Returning("id", "file_id", "version", "content", "created_at", "updated_at")
+				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQueryUpdate.String())).WillReturnRows(
 					sqlMock.NewRows([]string{"id", "file_id", "version", "content", "created_at", "updated_at"}).AddRow(
 						"file_content_id", "file_id", "v1.0.0", base64Content, "file_content_created_at", "file_content_updated_at",
 					),
@@ -326,9 +328,10 @@ func TestClient_EditFileContents(t *testing.T) {
 				sqlMock.ExpectQuery(regexp.QuoteMeta(contentQuery.String())).WillReturnRows(
 					sqlMock.NewRows([]string{"id"}).AddRow("file_content_id"),
 				)
-
-				preparedQueryUpdate := fmt.Sprintf("UPDATE file_contents SET updated_at = now(), content = '%s' WHERE id = 'file_content_id' RETURNING id, file_id, version, content, created_at, updated_at", base64Content)
-				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQueryUpdate)).WillReturnRows(
+				preparedQueryUpdate := query.New("UPDATE file_contents").Set("updated_at", "now()").Set("content", base64Content).
+					Where().EQ("id", "file_content_id").Query().
+					Returning("id", "file_id", "version", "content", "created_at", "updated_at")
+				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQueryUpdate.String())).WillReturnRows(
 					sqlMock.NewRows([]string{"id", "file_id", "version", "content", "created_at", "updated_at"}).AddRow(
 						"file_content_id", "file_id", "v1.0.0", base64Content, "file_content_created_at", "file_content_updated_at",
 					),
@@ -380,8 +383,10 @@ func TestClient_EditFileContents(t *testing.T) {
 					sqlMock.NewRows([]string{"id"}).AddRow("file_content_id"),
 				)
 
-				preparedQueryUpdate := fmt.Sprintf("UPDATE file_contents SET updated_at = now(), content = '%s' WHERE id = 'file_content_id' RETURNING id, file_id, version, content, created_at, updated_at", base64Content)
-				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQueryUpdate)).WillReturnError(errors.New("sql error"))
+				preparedQueryUpdate := query.New("UPDATE file_contents").Set("updated_at", "now()").Set("content", base64Content).
+					Where().EQ("id", "file_content_id").Query().
+					Returning("id", "file_id", "version", "content", "created_at", "updated_at")
+				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQueryUpdate.String())).WillReturnError(errors.New("sql error"))
 			},
 			expectedContent: nil,
 			expectedError:   tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message("sql error")),

@@ -391,8 +391,13 @@ func TestClient_Edit(t *testing.T) {
 				sqlMock.ExpectBegin()
 				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).
 					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("listener_id"))
-				sqlMock.ExpectQuery("UPDATE listeners SET").
-					WithArgs("new_name", "new_endpoint", "now()", "listener_id").
+
+				updateQuery := query.New("UPDATE listeners").Set("updated_at", "now()").
+					Set("name", "new_name").Set("callback_endpoint", "new_endpoint").
+					Where().EQ("id", "listener_id").Query().
+					Returning("id", "file_id", "callback_endpoint", "name", "created_at", "updated_at").String()
+
+				sqlMock.ExpectQuery(regexp.QuoteMeta(updateQuery)).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "file_id", "callback_endpoint", "name", "created_at", "updated_at"}).
 						AddRow("listener_id", "file_id", "new_endpoint", "new_name", "2023-01-01T00:00:00Z", "2023-01-02T00:00:00Z"))
 				sqlMock.ExpectCommit()
@@ -457,7 +462,6 @@ func TestBuildUpdateQuery(t *testing.T) {
 		name          string
 		req           *EditRequest
 		expectedQuery string
-		expectedArgs  []interface{}
 	}{
 		{
 			name: "update name and callback_endpoint",
@@ -466,8 +470,10 @@ func TestBuildUpdateQuery(t *testing.T) {
 				Name:             utils.MakePointer("new_name"),
 				CallbackEndpoint: utils.MakePointer("new_endpoint"),
 			},
-			expectedQuery: "UPDATE listeners SET name = $1, callback_endpoint = $2, updated_at = $3 WHERE id = $4 RETURNING id, file_id, callback_endpoint, name, created_at, updated_at",
-			expectedArgs:  []interface{}{"new_name", "new_endpoint", "now()", "listener_id"},
+			expectedQuery: query.New("UPDATE listeners").Set("updated_at", "now()").
+				Set("name", "new_name").Set("callback_endpoint", "new_endpoint").
+				Where().EQ("id", "listener_id").Query().
+				Returning("id", "file_id", "callback_endpoint", "name", "created_at", "updated_at").String(),
 		},
 		{
 			name: "update name only",
@@ -475,8 +481,10 @@ func TestBuildUpdateQuery(t *testing.T) {
 				ID:   "listener_id",
 				Name: utils.MakePointer("new_name"),
 			},
-			expectedQuery: "UPDATE listeners SET name = $1, updated_at = $2 WHERE id = $3 RETURNING id, file_id, callback_endpoint, name, created_at, updated_at",
-			expectedArgs:  []interface{}{"new_name", "now()", "listener_id"},
+			expectedQuery: query.New("UPDATE listeners").Set("updated_at", "now()").
+				Set("name", "new_name").
+				Where().EQ("id", "listener_id").Query().
+				Returning("id", "file_id", "callback_endpoint", "name", "created_at", "updated_at").String(),
 		},
 		{
 			name: "update callback_endpoint only",
@@ -484,16 +492,95 @@ func TestBuildUpdateQuery(t *testing.T) {
 				ID:               "listener_id",
 				CallbackEndpoint: utils.MakePointer("new_endpoint"),
 			},
-			expectedQuery: "UPDATE listeners SET callback_endpoint = $1, updated_at = $2 WHERE id = $3 RETURNING id, file_id, callback_endpoint, name, created_at, updated_at",
-			expectedArgs:  []interface{}{"new_endpoint", "now()", "listener_id"},
+			expectedQuery: query.New("UPDATE listeners").Set("updated_at", "now()").
+				Set("callback_endpoint", "new_endpoint").
+				Where().EQ("id", "listener_id").Query().
+				Returning("id", "file_id", "callback_endpoint", "name", "created_at", "updated_at").String(),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			query, args := buildUpdateQuery(tt.req)
+			query := buildUpdateQuery(tt.req)
 			assert.Equal(t, tt.expectedQuery, query)
-			assert.Equal(t, tt.expectedArgs, args)
+		})
+	}
+}
+
+func TestClient_Get(t *testing.T) {
+	tiny_errors.Init(custom_errors.ERRORS)
+	mockDb, sqlMock := database_mock.NewSQlMock(t)
+	client := New(&database.Client{mockDb})
+
+	tests := []struct {
+		name             string
+		req              *GetRequest
+		mockSetup        func()
+		expectedListener *Listener
+		expectedError    tiny_errors.ErrorHandler
+	}{
+		{
+			name: "successful get",
+			req:  &GetRequest{ID: "123"},
+			mockSetup: func() {
+				preparedQuery := query.New(QUERY_GET_LISTENERS).Where().EQ("id", "123").Query()
+				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "file_id", "name", "callback_endpoint"}).
+						AddRow("123", "file1", "Listener 1", "http://example.com/callback"))
+			},
+			expectedListener: &Listener{
+				ID:               "123",
+				FileID:           "file1",
+				Name:             "Listener 1",
+				CallbackEndpoint: "http://example.com/callback",
+			},
+			expectedError: nil,
+		},
+		{
+			name: "listener not found",
+			req:  &GetRequest{ID: "456"},
+			mockSetup: func() {
+				preparedQuery := query.New(QUERY_GET_LISTENERS).Where().EQ("id", "456").Query()
+				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).
+					WillReturnError(sql.ErrNoRows)
+			},
+			expectedListener: nil,
+			expectedError:    tiny_errors.New(custom_errors.ERR_CODE_NotFound),
+		},
+		{
+			name: "database error",
+			req:  &GetRequest{ID: "789"},
+			mockSetup: func() {
+				preparedQuery := query.New(QUERY_GET_LISTENERS).Where().EQ("id", "789").Query()
+				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).
+					WillReturnError(errors.New("database error"))
+			},
+			expectedListener: nil,
+			expectedError:    tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message("database error")),
+		},
+		{
+			name:             "nil request",
+			req:              nil,
+			mockSetup:        func() {},
+			expectedListener: nil,
+			expectedError:    tiny_errors.New(custom_errors.ERR_CODE_BodyRequired),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.mockSetup()
+
+			listener, err := client.Get(context.Background(), tt.req)
+
+			if tt.expectedError != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.expectedError.GetCode(), err.GetCode())
+				assert.Equal(t, tt.expectedError.GetMessage(), err.GetMessage())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.expectedListener, listener)
 		})
 	}
 }

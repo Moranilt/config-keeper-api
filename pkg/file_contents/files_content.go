@@ -3,8 +3,6 @@ package file_contents
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"strings"
 
 	"github.com/Moranilt/config-keeper/custom_errors"
 	"github.com/Moranilt/config-keeper/utils"
@@ -39,7 +37,6 @@ func New(db *database.Client) Client {
 	}
 }
 
-// TODO: store content as base64 string
 func (c *client) Create(ctx context.Context, req *CreateRequest) (*FileContent, tiny_errors.ErrorHandler) {
 	if req == nil {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
@@ -83,8 +80,7 @@ func (c *client) GetMany(ctx context.Context, req *GetManyRequest) ([]*FileConte
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
 	}
 
-	preparedQuery := query.New(QUERY_GET_FILE_CONTENTS)
-	preparedQuery.Where().EQ("file_id", req.FileID)
+	preparedQuery := query.New(QUERY_GET_FILE_CONTENTS).Where().EQ("file_id", req.FileID).Query()
 	if req.Version != nil {
 		preparedQuery.Where().EQ("version", req.Version)
 	}
@@ -114,8 +110,7 @@ func (c *client) Edit(ctx context.Context, req *EditRequest) (*FileContent, tiny
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, tiny_errors.Detail("version or content", "required"))
 	}
 
-	contentQuery := query.New(QUERY_GET_FILE_CONTENTS_ID)
-	contentQuery.Where().EQ("id", req.FileContentID)
+	contentQuery := query.New(QUERY_GET_FILE_CONTENTS_ID).Where().EQ("id", req.FileContentID).Query()
 
 	var id string
 	err := c.db.GetContext(ctx, &id, contentQuery.String())
@@ -127,23 +122,18 @@ func (c *client) Edit(ctx context.Context, req *EditRequest) (*FileContent, tiny
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_NotFound, tiny_errors.Message("file content does not exist"))
 	}
 
-	// TODO: refactor update query
-	var queryUpdate strings.Builder
-	queryUpdate.WriteString("UPDATE file_contents SET ")
-	var setters []string
-	setters = append(setters, "updated_at = now()")
+	queryUpdate := query.New("UPDATE file_contents").Set("updated_at", "now()").
+		Where().EQ("id", req.FileContentID).Query().
+		Returning("id", "file_id", "version", "content", "created_at", "updated_at")
 
 	if req.Version != nil {
-		setters = append(setters, fmt.Sprintf("version = '%s'", *req.Version))
+		queryUpdate.Set("version", *req.Version)
 	}
 
 	if req.Content != nil {
 		base64Content := utils.StringToBase64(*req.Content)
-		setters = append(setters, fmt.Sprintf("content = '%s'", base64Content))
+		queryUpdate.Set("content", base64Content)
 	}
-	queryUpdate.WriteString(strings.Join(setters, ", "))
-	queryUpdate.WriteString(fmt.Sprintf(" WHERE id = '%s'", req.FileContentID))
-	queryUpdate.WriteString(" RETURNING id, file_id, version, content, created_at, updated_at")
 
 	var fileContent FileContent
 	err = c.db.QueryRowxContext(ctx, queryUpdate.String()).StructScan(&fileContent)

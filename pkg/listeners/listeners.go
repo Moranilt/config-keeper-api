@@ -3,8 +3,6 @@ package listeners
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"strings"
 
 	"github.com/Moranilt/config-keeper/custom_errors"
 	"github.com/Moranilt/config-keeper/utils"
@@ -75,9 +73,7 @@ func (c *client) GetMany(ctx context.Context, req *GetManyRequest) ([]*Listener,
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
 	}
 
-	preparedQuery := query.New(QUERY_GET_LISTENERS)
-	preparedQuery.Where().EQ("file_id", req.FileID)
-	preparedQuery.Order("name", "asc")
+	preparedQuery := query.New(QUERY_GET_LISTENERS).Where().EQ("file_id", req.FileID).Query().Order("name", "asc")
 
 	listeners := make([]*Listener, 0)
 	err := c.db.SelectContext(ctx, &listeners, preparedQuery.String())
@@ -93,12 +89,15 @@ func (c *client) Get(ctx context.Context, req *GetRequest) (*Listener, tiny_erro
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
 	}
 
-	preparedQuery := query.New(QUERY_GET_LISTENERS)
-	preparedQuery.Where().EQ("id", req.ID)
+	preparedQuery := query.New(QUERY_GET_LISTENERS).Where().EQ("id", req.ID).Query()
 	var listener Listener
 	err := c.db.GetContext(ctx, &listener, preparedQuery.String())
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
+	}
+
+	if err == sql.ErrNoRows {
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_NotFound)
 	}
 
 	return &listener, nil
@@ -150,8 +149,7 @@ func (c *client) Edit(ctx context.Context, req *EditRequest) (*Listener, tiny_er
 	defer tx.Rollback()
 
 	var listener Listener
-	preparedQuery := query.New(QUERY_GET_LISTENERS)
-	preparedQuery.Where().EQ("id", req.ID)
+	preparedQuery := query.New(QUERY_GET_LISTENERS).Where().EQ("id", req.ID).Query()
 	err = tx.QueryRowxContext(ctx, preparedQuery.String()).StructScan(&listener)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -160,8 +158,8 @@ func (c *client) Edit(ctx context.Context, req *EditRequest) (*Listener, tiny_er
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
 
-	updateQuery, args := buildUpdateQuery(req)
-	err = tx.QueryRowxContext(ctx, updateQuery, args...).StructScan(&listener)
+	updateQuery := buildUpdateQuery(req)
+	err = tx.QueryRowxContext(ctx, updateQuery).StructScan(&listener)
 	if err != nil {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
@@ -173,30 +171,16 @@ func (c *client) Edit(ctx context.Context, req *EditRequest) (*Listener, tiny_er
 	return &listener, nil
 }
 
-func buildUpdateQuery(req *EditRequest) (string, []interface{}) {
-	var queryBuilder strings.Builder
-	var args []interface{}
-	var setClause []string
-
-	queryBuilder.WriteString("UPDATE listeners SET ")
+func buildUpdateQuery(req *EditRequest) string {
+	queryBuilder := query.New("UPDATE listeners").Set("updated_at", "now()").Where().EQ("id", req.ID).Query().
+		Returning("id", "file_id", "callback_endpoint", "name", "created_at", "updated_at")
 
 	if req.Name != nil {
-		setClause = append(setClause, "name = $1")
-		args = append(args, *req.Name)
+		queryBuilder.Set("name", *req.Name)
 	}
 	if req.CallbackEndpoint != nil {
-		setClause = append(setClause, fmt.Sprintf("callback_endpoint = $%d", len(args)+1))
-		args = append(args, *req.CallbackEndpoint)
+		queryBuilder.Set("callback_endpoint", *req.CallbackEndpoint)
 	}
 
-	setClause = append(setClause, fmt.Sprintf("updated_at = $%d", len(args)+1))
-	args = append(args, "now()")
-
-	queryBuilder.WriteString(strings.Join(setClause, ", "))
-	queryBuilder.WriteString(fmt.Sprintf(" WHERE id = $%d ", len(args)+1))
-	args = append(args, req.ID)
-
-	queryBuilder.WriteString("RETURNING id, file_id, callback_endpoint, name, created_at, updated_at")
-
-	return queryBuilder.String(), args
+	return queryBuilder.String()
 }

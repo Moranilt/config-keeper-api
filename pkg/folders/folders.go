@@ -90,8 +90,7 @@ func (c *client) Get(ctx context.Context, req *GetRequest) (*FolderWithPath, tin
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
 	}
 
-	preparedQuery := query.New(QUERY_GET_FOLDER_WITH_PATH)
-	preparedQuery.Where().EQ("id", req.ID)
+	preparedQuery := query.New(QUERY_GET_FOLDER_WITH_PATH).Where().EQ("id", req.ID).Query()
 
 	var folder FolderWithPath
 	err := c.db.GetContext(ctx, &folder, preparedQuery.String())

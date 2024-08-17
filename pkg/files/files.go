@@ -87,8 +87,7 @@ func (c *client) Create(ctx context.Context, req *CreateRequest) (*File, tiny_er
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, requiredErr...)
 	}
 
-	preparedQuery := query.New(QUERY_GET_FILES)
-	preparedQuery.Where().EQ("name", req.Name)
+	preparedQuery := query.New(QUERY_GET_FILES).Where().EQ("name", req.Name).Query()
 	if req.FolderID != nil {
 		preparedQuery.Where().EQ("folder_id", req.FolderID)
 	} else {
@@ -205,8 +204,7 @@ func (c *client) Get(ctx context.Context, req *GetRequest) (*File, tiny_errors.E
 	if len(requiredErr) > 0 {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, requiredErr...)
 	}
-	preparedQuery := query.New(QUERY_GET_FILES)
-	preparedQuery.Where().EQ("id", req.ID)
+	preparedQuery := query.New(QUERY_GET_FILES).Where().EQ("id", req.ID).Query()
 	var file File
 	err := c.db.GetContext(ctx, &file, preparedQuery.String())
 	if err != nil {
