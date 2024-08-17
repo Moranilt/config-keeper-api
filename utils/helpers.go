@@ -30,40 +30,35 @@ type RequiredField struct {
 }
 
 func ValidateRequiredFields(data []RequiredField) []tiny_errors.ErrorOption {
-	options := []tiny_errors.ErrorOption{}
+	var options []tiny_errors.ErrorOption
 	for _, field := range data {
-		switch field.Value.(type) {
-		case nil:
+		if isEmptyValue(field.Value) {
 			options = append(options, tiny_errors.Detail(field.Name, "required"))
-		case string:
-			if field.Value == "" {
-				options = append(options, tiny_errors.Detail(field.Name, "required"))
-			}
-		case int:
-			if field.Value == 0 {
-				options = append(options, tiny_errors.Detail(field.Name, "required"))
-			}
-		case float64:
-			if field.Value == 0.0 {
-				options = append(options, tiny_errors.Detail(field.Name, "required"))
-			}
-		default:
-			anyType := reflect.ValueOf(field.Value)
-			switch anyType.Kind() {
-			case reflect.Ptr:
-				if anyType.IsNil() {
-					options = append(options, tiny_errors.Detail(field.Name, "required"))
-				}
-			default:
-				continue
-			}
 		}
 	}
+	return options
+}
 
-	if len(options) > 0 {
-		return options
+func isEmptyValue(v any) bool {
+	switch value := v.(type) {
+	case nil:
+		return true
+	case string:
+		return value == ""
+	case int:
+		return value == 0
+	case float64:
+		return value == 0.0
+	default:
+		rv := reflect.ValueOf(v)
+		switch rv.Kind() {
+		case reflect.Ptr, reflect.Interface:
+			return rv.IsNil()
+		case reflect.Slice, reflect.Map:
+			return rv.Len() == 0
+		}
 	}
-	return nil
+	return false
 }
 
 func StringToBase64(str string) string {

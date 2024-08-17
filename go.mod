@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/Moranilt/http-utils v1.1.20
+	github.com/Moranilt/http-utils v1.1.21
 	github.com/golang-migrate/migrate v3.5.4+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
