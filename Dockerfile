@@ -2,19 +2,19 @@ FROM golang:1.23 AS builder
 COPY . /src
 WORKDIR /src
 
+ARG GOARCH=amd64
+ARG GOOS=linux
+
 RUN ARCH=$(uname -m) && \
     case $ARCH in \
         x86_64) GOARCH=amd64 ;; \
         aarch64) GOARCH=arm64 ;; \
         armv7l) GOARCH=arm ;; \
         *) GOARCH=amd64 ;; \
-    esac
+    esac && \
+    echo "GOARCH: ${GOARCH}"
 
 ENV GOARCH=${GOARCH}
-
-ARG GOOS=linux
-ARG GOARCH=amd64
-
 ENV CGO_ENABLED=0
 ENV GOOS=${GOOS}
 ENV GOARCH=${GOARCH}
