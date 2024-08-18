@@ -10,6 +10,7 @@ RUN ARCH=$(uname -m) && \
     case $ARCH in \
         x86_64) GOARCH=amd64 ;; \
         aarch64) GOARCH=arm64 ;; \
+        arm64) GOARCH=arm64 ;; \
         armv7l) GOARCH=arm ;; \
         i386|i686) GOARCH=386 ;; \
         s390x) GOARCH=s390x ;; \
@@ -21,7 +22,7 @@ ENV CGO_ENABLED=0
 ENV GOOS=${GOOS}
 ENV GOARCH=${GOARCH}
 
-RUN echo "GOARCH ENV: ${GOARCH}"
+RUN echo "GOARCH ENV: $GOARCH"
 RUN go build -o /src/bin/config-keeper-api
 COPY ./migrations /src/bin/migrations
 
