@@ -16,7 +16,8 @@ RUN ARCH=$(uname -m) && \
         s390x) GOARCH=s390x ;; \
         *) GOARCH=amd64 ;; \
     esac && \
-    echo "GOARCH: ${GOARCH}"
+    echo "GOARCH: ${GOARCH}" && \
+    export GOARCH=${GOARCH}
 
 ENV CGO_ENABLED=0
 ENV GOOS=${GOOS}
