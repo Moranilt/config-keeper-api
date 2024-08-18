@@ -1,3 +1,5 @@
+ARG GOLANG_VERSION
+
 FROM golang:${GOLANG_VERSION} AS builder
 COPY . /src
 WORKDIR /src
