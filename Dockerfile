@@ -4,15 +4,11 @@ FROM golang:${GOLANG_VERSION} AS builder
 COPY . /src
 WORKDIR /src
 
-ARG GOOS=linux
 ARG TARGETARCH
 
 ENV CGO_ENABLED=0
-ENV GOOS=${GOOS}
-ENV GOARCH=${TARGETARCH}
 
-RUN echo "GOARCH ENV: $TARGETARCH $GOARCH $GOOS $CGO_ENABLED"
-RUN GOARCH=${GOARCH} go build -o /src/bin/config-keeper-api
+RUN go build -o /src/bin/config-keeper-api
 COPY ./migrations /src/bin/migrations
 
 FROM alpine:latest
