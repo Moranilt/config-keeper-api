@@ -4,8 +4,6 @@ FROM golang:${GOLANG_VERSION} AS builder
 COPY . /src
 WORKDIR /src
 
-ARG TARGETARCH
-
 ENV CGO_ENABLED=0
 
 RUN go build -o /src/bin/config-keeper-api
