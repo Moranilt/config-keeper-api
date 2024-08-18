@@ -19,5 +19,7 @@ jobs:
       run: docker build . --file Dockerfile --tag ${{ vars.DOCKER_IMAGE_NAME }}:0.2.0
     - name: Docker login
       run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+    - name: Add tag
+      run: docker tag ${{ vars.DOCKER_IMAGE_NAME }}:0.2.0 ${{ secrets.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:0.2.0
     - name: Deploy image
       run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:0.2.0
