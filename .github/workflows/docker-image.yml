@@ -3,8 +3,6 @@ name: Docker Image CI
 on:
   push:
     branches: [ "main", "feature/*" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
@@ -13,13 +11,23 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Print Docker Image Name
-      run: echo "${{ vars.DOCKER_IMAGE_NAME }}"
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag ${{ vars.DOCKER_IMAGE_NAME }}:0.2.0
-    - name: Docker login
-      run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-    - name: Add tag
-      run: docker tag ${{ vars.DOCKER_IMAGE_NAME }}:0.2.0 ${{ secrets.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:0.2.0
-    - name: Deploy image
-      run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:0.2.0
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3.2.0
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3.2.0
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3.2.0
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        platforms: all
+        push: true
+        tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:0.3.0
