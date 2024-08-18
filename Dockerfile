@@ -11,7 +11,7 @@ ENV CGO_ENABLED=0
 ENV GOOS=${GOOS}
 ENV GOARCH=${TARGETARCH}
 
-RUN echo "GOARCH ENV: $TARGETARCH $GOARCH"
+RUN echo "GOARCH ENV: $TARGETARCH $GOARCH $GOOS $CGO_ENABLED"
 RUN GOARCH=${GOARCH} go build -o /src/bin/config-keeper-api
 COPY ./migrations /src/bin/migrations
 
