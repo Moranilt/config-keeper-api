@@ -24,7 +24,7 @@ ENV GOOS=${GOOS}
 ENV GOARCH=${GOARCH}
 
 RUN echo "GOARCH ENV: $GOARCH"
-RUN go build -o /src/bin/config-keeper-api
+RUN GOARCH=${GOARCH} go build -o /src/bin/config-keeper-api
 COPY ./migrations /src/bin/migrations
 
 FROM alpine:latest
