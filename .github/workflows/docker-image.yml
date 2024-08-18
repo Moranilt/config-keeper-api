@@ -14,10 +14,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Print Docker Image Name
-      run: echo "${{ env.DOCKER_IMAGE_NAME }}"
+      run: echo "${{ vars.DOCKER_IMAGE_NAME }}"
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag ${{ env.DOCKER_IMAGE_NAME }}:${{ github.ref_name }}
+      run: docker build . --file Dockerfile --tag ${{ vars.DOCKER_IMAGE_NAME }}:0.2.0
     - name: Docker login
       run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
     - name: Deploy image
-      run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.ref_name }}
+      run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:0.2.0
