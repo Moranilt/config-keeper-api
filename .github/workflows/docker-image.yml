@@ -17,8 +17,8 @@ jobs:
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3.2.0
 
-    - name: Print git ref
-      run: echo ${{ github.ref }} && echo ${{ github.ref_name }}
+    - name: Set version
+      run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3.2.0
@@ -35,6 +35,6 @@ jobs:
         context: .
         platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/s390x,linux/ppc64le
         push: true
-        tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:${{ github.ref_name }}
+        tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:${{ env.VERSION }}
         build-args: |
           GOLANG_VERSION=${{ vars.GOLANG_VERSION }}
