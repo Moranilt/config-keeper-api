@@ -1,8 +1,7 @@
-FROM golang:1.23 AS builder
+FROM golang:${GOLANG_VERSION} AS builder
 COPY . /src
 WORKDIR /src
 
-ARG GOARCH=amd64
 ARG GOOS=linux
 
 RUN ARCH=$(uname -m) && \
@@ -14,7 +13,6 @@ RUN ARCH=$(uname -m) && \
     esac && \
     echo "GOARCH: ${GOARCH}"
 
-ENV GOARCH=${GOARCH}
 ENV CGO_ENABLED=0
 ENV GOOS=${GOOS}
 ENV GOARCH=${GOARCH}
