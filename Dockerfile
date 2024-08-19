@@ -13,7 +13,7 @@ FROM alpine:latest
 COPY --from=builder /src/bin /src/bin
 WORKDIR /src/bin
 
-ENV PRODUCTION=true
+ENV PRODUCTION=false
 ENV PORT=8080
 ENV TRACER_URL=http://localhost:14268/api/traces
 ENV TRACER_NAME=test
