@@ -51,7 +51,7 @@ func Run(ctx context.Context) {
 		log.Fatalf("config: %v", err)
 	}
 
-	db, err := database.New(ctx, DB_DRIVER_NAME, cfg.DB, cfg.Production)
+	db, err := database.New(ctx, DB_DRIVER_NAME, cfg.DB)
 	if err != nil {
 		log.Fatalf("db connection: %v", err)
 	}
