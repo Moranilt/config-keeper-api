@@ -59,14 +59,20 @@ func Read() (*Config, error) {
 		result[name] = value
 	}
 
+	dbCreds := &database.Credentials{
+		Username: result[ENV_DB_USER],
+		Password: result[ENV_DB_PASSWORD],
+		DBName:   result[ENV_DB_NAME],
+		Host:     result[ENV_DB_HOST],
+	}
+
+	if result[ENV_DB_SSL_MODE] != "" {
+		sslMode := result[ENV_DB_SSL_MODE]
+		dbCreds.SSLMode = &sslMode
+	}
+
 	envCfg = Config{
-		DB: &database.Credentials{
-			Username: result[ENV_DB_USER],
-			Password: result[ENV_DB_PASSWORD],
-			DBName:   result[ENV_DB_NAME],
-			Host:     result[ENV_DB_HOST],
-			SSLMode:  result[ENV_DB_SSL_MODE],
-		},
+		DB: dbCreds,
 		Tracer: &TracerConfig{
 			URL:  result[ENV_TRACER_URL],
 			Name: result[ENV_TRACER_NAME],
