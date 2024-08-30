@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/Moranilt/config-keeper/pkg/aliases"
 	"github.com/Moranilt/config-keeper/pkg/content_formats"
 	"github.com/Moranilt/config-keeper/pkg/file_contents"
 	"github.com/Moranilt/config-keeper/pkg/files"
@@ -149,3 +150,11 @@ type DeleteListenerResponse struct {
 type GetContentFormatsRequest struct{}
 
 type GetContentFormatsResponse []*content_formats.ContentFormat
+
+type CreateAliasRequest struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+	Color string `json:"color"`
+}
+
+type CreateAliasResponse aliases.Alias
