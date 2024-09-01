@@ -2,6 +2,8 @@ package aliases
 
 import (
 	"context"
+	"database/sql"
+	"net/http"
 	"strings"
 
 	"github.com/Moranilt/config-keeper/custom_errors"
@@ -36,6 +38,9 @@ type Client interface {
 	// Retrieves multiple aliases from the database
 	GetMany(ctx context.Context, req *GetManyRequest) ([]*Alias, tiny_errors.ErrorHandler)
 
+	// Retrieves a single alias from the database based on the provided request
+	Get(ctx context.Context, req *GetRequest) (*Alias, tiny_errors.ErrorHandler)
+
 	// Updates an existing alias in the database
 	Edit(ctx context.Context, req *EditRequest) (*Alias, tiny_errors.ErrorHandler)
 
@@ -44,6 +49,9 @@ type Client interface {
 
 	// Removes aliases from a specific file
 	RemoveFromFile(ctx context.Context, req *RemoveFromFileRequest) (int, tiny_errors.ErrorHandler)
+
+	// Retrieves aliases from a specific file
+	GetFileAliases(ctx context.Context, req *GetFileAliasesRequest) ([]*Alias, tiny_errors.ErrorHandler)
 }
 
 // New creates a new instance of the Client interface, which provides methods for
@@ -214,6 +222,31 @@ func (c *client) GetMany(ctx context.Context, req *GetManyRequest) ([]*Alias, ti
 	return aliases, nil
 }
 
+func (c *client) Get(ctx context.Context, req *GetRequest) (*Alias, tiny_errors.ErrorHandler) {
+	if req == nil {
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
+	}
+	requiredFields := []utils.RequiredField{
+		{Name: "alias_id", Value: req.AliasID},
+	}
+	requiredErr := utils.ValidateRequiredFields(requiredFields)
+	if len(requiredErr) > 0 {
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, requiredErr...)
+	}
+
+	preparedQuery := query.New(QUERY_GET_ALIASES).Where().EQ("id", "?").Query()
+	var alias Alias
+	err := c.db.GetContext(ctx, &alias, preparedQuery.String(), req.AliasID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, tiny_errors.New(custom_errors.ERR_CODE_NotFound, tiny_errors.HTTPStatus(http.StatusNotFound))
+		}
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
+	}
+
+	return &alias, nil
+}
+
 func (c *client) Edit(ctx context.Context, req *EditRequest) (*Alias, tiny_errors.ErrorHandler) {
 	if req == nil {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
@@ -321,4 +354,28 @@ func (c *client) RemoveFromFile(ctx context.Context, req *RemoveFromFileRequest)
 	}
 
 	return int(affected), nil
+}
+
+func (c *client) GetFileAliases(ctx context.Context, req *GetFileAliasesRequest) ([]*Alias, tiny_errors.ErrorHandler) {
+	if req == nil {
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
+	}
+	requiredFields := []utils.RequiredField{
+		{Name: "file_id", Value: req.FileID},
+	}
+	requiredErr := utils.ValidateRequiredFields(requiredFields)
+	if len(requiredErr) > 0 {
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, requiredErr...)
+	}
+
+	preparedQuery := query.New("SELECT a.id, a.key, a.value, a.color, a.created_at, a.updated_at FROM aliases as a").
+		InnerJoin("files_aliases as fa", "fa.alias_id=a.id").
+		Where().EQ("fa.file_id", "?").Query()
+	aliases := make([]*Alias, 0)
+	err := c.db.SelectContext(ctx, &aliases, preparedQuery.String(), req.FileID)
+	if err != nil {
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
+	}
+
+	return aliases, nil
 }

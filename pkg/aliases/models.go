@@ -52,6 +52,10 @@ type GetManyRequest struct {
 	OrderType *string
 }
 
+type GetRequest struct {
+	AliasID string
+}
+
 type EditRequest struct {
 	AliasID string
 	Key     *string
@@ -67,4 +71,8 @@ type AddToFileRequest struct {
 type RemoveFromFileRequest struct {
 	FileID  string
 	Aliases []string
+}
+
+type GetFileAliasesRequest struct {
+	FileID string
 }
