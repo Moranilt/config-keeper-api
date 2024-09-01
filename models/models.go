@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/Moranilt/config-keeper/pkg/aliases"
 	"github.com/Moranilt/config-keeper/pkg/content_formats"
 	"github.com/Moranilt/config-keeper/pkg/file_contents"
 	"github.com/Moranilt/config-keeper/pkg/files"
@@ -21,15 +22,20 @@ type GetFolderRequest struct {
 	OrderType   *string `mapstructure:"order_type"`
 }
 
+type FileWithAliases struct {
+	files.File
+	Aliases []*aliases.Alias `json:"aliases"`
+}
+
 type GetFolderResponse struct {
-	ID        string            `json:"id"`
-	Name      string            `json:"name"`
-	ParentID  *string           `json:"parent_id"`
-	CreatedAt string            `json:"created_at"`
-	UpdatedAt string            `json:"updated_at"`
-	Path      string            `json:"path"`
-	Folders   []*folders.Folder `json:"folders"`
-	Files     []*files.File     `json:"files"`
+	ID        string             `json:"id"`
+	Name      string             `json:"name"`
+	ParentID  *string            `json:"parent_id"`
+	CreatedAt string             `json:"created_at"`
+	UpdatedAt string             `json:"updated_at"`
+	Path      string             `json:"path"`
+	Folders   []*folders.Folder  `json:"folders"`
+	Files     []*FileWithAliases `json:"files"`
 }
 
 type DeleteFolderRequest struct {
@@ -75,6 +81,7 @@ type GetFileRequest struct {
 
 type GetFileResponse struct {
 	files.File
+	Aliases  []*aliases.Alias             `json:"aliases"`
 	Contents []*file_contents.FileContent `json:"contents"`
 }
 
@@ -149,3 +156,68 @@ type DeleteListenerResponse struct {
 type GetContentFormatsRequest struct{}
 
 type GetContentFormatsResponse []*content_formats.ContentFormat
+
+type CreateAliasRequest struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+	Color string `json:"color"`
+}
+
+type CreateAliasResponse aliases.Alias
+
+type GetAliasesRequest struct {
+	Limit     *string `mapstructure:"limit"`
+	Offset    *string `mapstructure:"offset"`
+	Key       *string `mapstructure:"key"`
+	Value     *string `mapstructure:"value"`
+	OrderBy   *string `mapstructure:"order_by"`
+	OrderType *string `mapstructure:"order_type"`
+}
+
+type GetAliasesResponse []*aliases.Alias
+
+type GetAliasRequests struct {
+	AliasID string `mapstructure:"alias_id"`
+}
+
+type GetAliasResponse aliases.Alias
+
+type EditAliasRequest struct {
+	AliasID string  `mapstructure:"alias_id"`
+	Key     *string `json:"key"`
+	Value   *string `json:"value"`
+	Color   *string `json:"color"`
+}
+
+type EditAliasResponse aliases.Alias
+
+type DeleteAliasRequest struct {
+	AliasID string `mapstructure:"alias_id"`
+}
+
+type DeleteAliasResponse struct {
+	Status bool `json:"status"`
+}
+type AddAliasToFileRequest struct {
+	FileID  string   `mapstructure:"file_id"`
+	Aliases []string `json:"aliases"`
+}
+
+type AddAliasToFileResponse struct {
+	Added int `json:"added"`
+}
+
+type GetFileAliasesRequest struct {
+	FileID string `mapstructure:"file_id"`
+}
+
+type GetFileAliasesResponse []*aliases.Alias
+
+type RemoveAliasFromFileRequest struct {
+	FileID  string   `mapstructure:"file_id"`
+	Aliases []string `json:"aliases"`
+}
+
+type RemoveAliasFromFileResponse struct {
+	Removed int `json:"removed"`
+}
