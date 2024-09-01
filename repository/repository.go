@@ -2,9 +2,11 @@ package repository
 
 import (
 	"context"
+	"slices"
 
 	"github.com/Moranilt/config-keeper/custom_errors"
 	"github.com/Moranilt/config-keeper/models"
+	"github.com/Moranilt/config-keeper/pkg/aliases"
 	"github.com/Moranilt/config-keeper/pkg/callback"
 	"github.com/Moranilt/config-keeper/pkg/content_formats"
 	"github.com/Moranilt/config-keeper/pkg/file_contents"
@@ -33,6 +35,7 @@ type Repository struct {
 	listeners      listeners.Client
 	callback       callback.CallbackChannel
 	contentFormats content_formats.Client
+	aliases        aliases.Client
 }
 
 func New(
@@ -43,6 +46,7 @@ func New(
 	fileContent file_contents.Client,
 	listeners listeners.Client,
 	contentFormats content_formats.Client,
+	aliases aliases.Client,
 	logger logger.Logger,
 ) *Repository {
 	return &Repository{
@@ -55,6 +59,7 @@ func New(
 		listeners:      listeners,
 		callback:       callback,
 		contentFormats: contentFormats,
+		aliases:        aliases,
 	}
 }
 
@@ -165,8 +170,43 @@ func (repo *Repository) GetFolder(ctx context.Context, req *models.GetFolderRequ
 	})
 	if err != nil {
 		span.RecordError(err)
-		span.SetStatus(codes.Error, "GetMany")
+		span.SetStatus(codes.Error, "GetFiles")
 		return nil, err
+	}
+
+	fileIds := make([]string, len(files))
+	for i, file := range files {
+		fileIds[i] = file.ID
+	}
+
+	foundAliases, err := repo.aliases.GetFilesAliasesManyToMany(ctx, &aliases.GetFilesAliasesManyToManyRequest{
+		FileIDs: fileIds,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "GetFilesAliasesManyToMany")
+		return nil, err
+	}
+
+	fileAliases := make(map[string][]*aliases.Alias)
+	for _, alias := range foundAliases {
+		fileAliases[alias.FileID] = append(fileAliases[alias.FileID], &aliases.Alias{
+			ID:        alias.ID,
+			Key:       alias.Key,
+			Value:     alias.Value,
+			Color:     alias.Color,
+			CreatedAt: alias.CreatedAt,
+			UpdatedAt: alias.UpdatedAt,
+		})
+	}
+
+	filesWithAliases := make([]*models.FileWithAliases, len(files))
+	for i, file := range files {
+		fileWithAliases := &models.FileWithAliases{
+			File:    *file,
+			Aliases: fileAliases[file.ID],
+		}
+		filesWithAliases[i] = fileWithAliases
 	}
 
 	return &models.GetFolderResponse{
@@ -177,7 +217,7 @@ func (repo *Repository) GetFolder(ctx context.Context, req *models.GetFolderRequ
 		UpdatedAt: folderWithPath.UpdatedAt,
 		Path:      folderWithPath.Path,
 		Folders:   folders,
-		Files:     files,
+		Files:     filesWithAliases,
 	}, nil
 }
 
@@ -366,8 +406,19 @@ func (repo *Repository) GetFile(ctx context.Context, req *models.GetFileRequest)
 		span.SetStatus(codes.Error, "GetFileContents")
 		return nil, err
 	}
+
+	foundAliases, err := repo.aliases.GetFileAliases(ctx, &aliases.GetFileAliasesRequest{
+		FileID: req.FileID,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "GetFileAliases")
+		return nil, err
+	}
+
 	return &models.GetFileResponse{
 		File:     *file,
+		Aliases:  foundAliases,
 		Contents: fileContents,
 	}, nil
 }
@@ -575,4 +626,209 @@ func (repo *Repository) GetContentFormats(ctx context.Context, req *models.GetCo
 	}
 
 	return (*models.GetContentFormatsResponse)(&contentFormats), nil
+}
+
+func (repo *Repository) CreateAlias(ctx context.Context, req *models.CreateAliasRequest) (*models.CreateAliasResponse, tiny_errors.ErrorHandler) {
+	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req, "callback", "CreateAlias")
+	if req == nil {
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
+	}
+	ctx, span := repo.tracer.Start(ctx, "CreateAlias", trace.WithAttributes(
+		attribute.String("key", req.Key),
+		attribute.String("value", req.Key),
+		attribute.String("color", req.Color),
+	))
+	defer span.End()
+
+	exists, err := repo.aliases.Exists(ctx, &aliases.ExistsRequest{
+		Key:   req.Key,
+		Value: req.Value,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "ExistsAlias")
+		return nil, err
+	}
+
+	if exists {
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Exists)
+	}
+
+	alias, err := repo.aliases.Create(ctx, &aliases.CreateRequest{
+		Key:   req.Key,
+		Value: req.Value,
+		Color: req.Color,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "NewAlias")
+		return nil, err
+	}
+
+	return (*models.CreateAliasResponse)(alias), nil
+}
+
+func (repo *Repository) GetAliases(ctx context.Context, req *models.GetAliasesRequest) (*models.GetAliasesResponse, tiny_errors.ErrorHandler) {
+	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req, "callback", "GetAliases")
+	ctx, span := repo.tracer.Start(ctx, "GetAliases")
+	defer span.End()
+
+	getRequest := &aliases.GetManyRequest{}
+
+	if req != nil {
+		getRequest = &aliases.GetManyRequest{
+			Key:       req.Key,
+			Value:     req.Value,
+			Limit:     req.Limit,
+			Offset:    req.Offset,
+			OrderBy:   req.OrderBy,
+			OrderType: req.OrderType,
+		}
+	}
+
+	aliases, err := repo.aliases.GetMany(ctx, getRequest)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "GetMany")
+		return nil, err
+	}
+
+	return (*models.GetAliasesResponse)(&aliases), nil
+}
+
+func (repo *Repository) GetAlias(ctx context.Context, req *models.GetAliasRequests) (*models.GetAliasResponse, tiny_errors.ErrorHandler) {
+	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req, "callback", "GetAlias")
+	ctx, span := repo.tracer.Start(ctx, "GetAlias")
+	defer span.End()
+
+	alias, err := repo.aliases.Get(ctx, &aliases.GetRequest{
+		AliasID: req.AliasID,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "Get")
+		return nil, err
+	}
+
+	return (*models.GetAliasResponse)(alias), nil
+}
+
+func (repo *Repository) EditAlias(ctx context.Context, req *models.EditAliasRequest) (*models.EditAliasResponse, tiny_errors.ErrorHandler) {
+	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req, "callback", "EditAlias")
+	ctx, span := repo.tracer.Start(ctx, "EditAlias")
+	defer span.End()
+
+	alias, err := repo.aliases.Edit(ctx, &aliases.EditRequest{
+		AliasID: req.AliasID,
+		Key:     req.Key,
+		Value:   req.Value,
+		Color:   req.Color,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "Edit")
+		return nil, err
+	}
+
+	return (*models.EditAliasResponse)(alias), nil
+}
+
+func (repo *Repository) DeleteAlias(ctx context.Context, req *models.DeleteAliasRequest) (*models.DeleteAliasResponse, tiny_errors.ErrorHandler) {
+	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req, "callback", "DeleteAlias")
+	ctx, span := repo.tracer.Start(ctx, "DeleteAlias")
+	defer span.End()
+
+	removed, err := repo.aliases.Delete(ctx, &aliases.DeleteRequest{
+		AliasID: req.AliasID,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "Delete")
+		return nil, err
+	}
+
+	return &models.DeleteAliasResponse{
+		Status: removed,
+	}, nil
+}
+
+func (repo *Repository) AddAliasToFile(ctx context.Context, req *models.AddAliasToFileRequest) (*models.AddAliasToFileResponse, tiny_errors.ErrorHandler) {
+	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req, "callback", "AddAliasToFile")
+	ctx, span := repo.tracer.Start(ctx, "AddAliasToFile")
+	defer span.End()
+
+	exists, err := repo.aliases.ExistsInFile(ctx, &aliases.ExistsInFileRequest{
+		FileID:  req.FileID,
+		Aliases: req.Aliases,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "ExistsInFile")
+		return nil, err
+	}
+
+	totalAdded := len(req.Aliases) - len(exists)
+	if totalAdded == 0 {
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Exists, tiny_errors.Message("provided aliases already exists"))
+	}
+
+	notExists := make([]string, totalAdded)
+	currentIndex := 0
+	for _, alias := range req.Aliases {
+		if !slices.Contains(exists, alias) {
+			notExists[currentIndex] = alias
+			currentIndex++
+		}
+	}
+
+	added, err := repo.aliases.AddToFile(ctx, &aliases.AddToFileRequest{
+		FileID:  req.FileID,
+		Aliases: notExists,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "AddToFile")
+		return nil, err
+	}
+
+	return &models.AddAliasToFileResponse{
+		Added: added,
+	}, nil
+}
+
+func (repo *Repository) GetFileAliases(ctx context.Context, req *models.GetFileAliasesRequest) (*models.GetFileAliasesResponse, tiny_errors.ErrorHandler) {
+	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req, "callback", "GetFileAliases")
+	ctx, span := repo.tracer.Start(ctx, "GetFileAliases")
+	defer span.End()
+
+	aliases, err := repo.aliases.GetFileAliases(ctx, &aliases.GetFileAliasesRequest{
+		FileID: req.FileID,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "GetFileAliases")
+		return nil, err
+	}
+
+	return (*models.GetFileAliasesResponse)(&aliases), nil
+}
+
+func (repo *Repository) RemoveFileAliases(ctx context.Context, req *models.RemoveAliasFromFileRequest) (*models.RemoveAliasFromFileResponse, tiny_errors.ErrorHandler) {
+	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req, "callback", "RemoveFileAliases")
+	ctx, span := repo.tracer.Start(ctx, "RemoveFileAliases")
+	defer span.End()
+
+	removed, err := repo.aliases.RemoveFromFile(ctx, &aliases.RemoveFromFileRequest{
+		FileID:  req.FileID,
+		Aliases: req.Aliases,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "RemoveFromFile")
+		return nil, err
+	}
+
+	return &models.RemoveAliasFromFileResponse{
+		Removed: removed,
+	}, nil
 }

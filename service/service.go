@@ -37,6 +37,17 @@ type ListenersService interface {
 	DeleteListener(w http.ResponseWriter, r *http.Request)
 }
 
+type AliasesService interface {
+	CreateAlias(w http.ResponseWriter, r *http.Request)
+	GetAliases(w http.ResponseWriter, r *http.Request)
+	GetAlias(w http.ResponseWriter, r *http.Request)
+	EditAlias(w http.ResponseWriter, r *http.Request)
+	DeleteAlias(w http.ResponseWriter, r *http.Request)
+	AddAliasToFile(w http.ResponseWriter, r *http.Request)
+	GetFileAliases(w http.ResponseWriter, r *http.Request)
+	RemoveFileAliases(w http.ResponseWriter, r *http.Request)
+}
+
 type ContentFormatsService interface {
 	GetContentFormats(w http.ResponseWriter, r *http.Request)
 }
@@ -46,6 +57,7 @@ type Service interface {
 	FileService
 	FileContentServices
 	ListenersService
+	AliasesService
 	ContentFormatsService
 }
 
@@ -173,5 +185,56 @@ func (s *service) DeleteListener(w http.ResponseWriter, r *http.Request) {
 
 func (s *service) GetContentFormats(w http.ResponseWriter, r *http.Request) {
 	handler.New(w, r, s.log, s.repo.GetContentFormats).
+		Run(http.StatusOK)
+}
+
+func (s *service) CreateAlias(w http.ResponseWriter, r *http.Request) {
+	handler.New(w, r, s.log, s.repo.CreateAlias).
+		WithJSON().
+		Run(http.StatusCreated)
+}
+
+func (s *service) GetAliases(w http.ResponseWriter, r *http.Request) {
+	handler.New(w, r, s.log, s.repo.GetAliases).
+		WithQuery().
+		Run(http.StatusOK)
+}
+
+func (s *service) GetAlias(w http.ResponseWriter, r *http.Request) {
+	handler.New(w, r, s.log, s.repo.GetAlias).
+		WithVars().
+		Run(http.StatusOK)
+}
+
+func (s *service) EditAlias(w http.ResponseWriter, r *http.Request) {
+	handler.New(w, r, s.log, s.repo.EditAlias).
+		WithVars().
+		WithJSON().
+		Run(http.StatusOK)
+}
+
+func (s *service) DeleteAlias(w http.ResponseWriter, r *http.Request) {
+	handler.New(w, r, s.log, s.repo.DeleteAlias).
+		WithVars().
+		Run(http.StatusOK)
+}
+
+func (s *service) AddAliasToFile(w http.ResponseWriter, r *http.Request) {
+	handler.New(w, r, s.log, s.repo.AddAliasToFile).
+		WithVars().
+		WithJSON().
+		Run(http.StatusOK)
+}
+
+func (s *service) GetFileAliases(w http.ResponseWriter, r *http.Request) {
+	handler.New(w, r, s.log, s.repo.GetFileAliases).
+		WithVars().
+		Run(http.StatusOK)
+}
+
+func (s *service) RemoveFileAliases(w http.ResponseWriter, r *http.Request) {
+	handler.New(w, r, s.log, s.repo.RemoveFileAliases).
+		WithVars().
+		WithJSON().
 		Run(http.StatusOK)
 }

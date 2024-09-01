@@ -40,9 +40,9 @@ func TestClient_CreateFileContent(t *testing.T) {
 			mockSetup: func() {
 				preparedQuery := query.New(QUERY_CREATE_ALIAS).
 					InsertColumns("key", "value", "color").
-					Values("?", "?", "?").
-					Returning("id", "key", "value", "color", "created_at")
-				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).WithArgs("key1", "value1", "color1").WillReturnRows(
+					Values("key1", "value1", "color1").
+					Returning("id", "key", "value", "color", "created_at", "updated_at")
+				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).WillReturnRows(
 					sqlMock.NewRows([]string{"id", "key", "value", "color", "created_at"}).
 						AddRow("alias_id", "key1", "value1", "color1", "alias_created_at"),
 				)
@@ -73,9 +73,9 @@ func TestClient_CreateFileContent(t *testing.T) {
 			mockSetup: func() {
 				preparedQuery := query.New(QUERY_CREATE_ALIAS).
 					InsertColumns("key", "value", "color").
-					Values("?", "?", "?").
-					Returning("id", "key", "value", "color", "created_at")
-				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).WithArgs("key1", "value1", "color1").WillReturnError(
+					Values("key1", "value1", "color1").
+					Returning("id", "key", "value", "color", "created_at", "updated_at")
+				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).WillReturnError(
 					assert.AnError,
 				)
 			},
@@ -353,9 +353,8 @@ func TestClient_Delete(t *testing.T) {
 				AliasID: "alias1",
 			},
 			mockSetup: func() {
-				preparedQuery := query.New(QUERY_DELETE_ALIAS).Where().EQ("id", "?").Query()
+				preparedQuery := query.New(QUERY_DELETE_ALIAS).Where().EQ("id", "alias1").Query()
 				sqlMock.ExpectExec(regexp.QuoteMeta(preparedQuery.String())).
-					WithArgs("alias1").
 					WillReturnResult(sqlmock.NewResult(0, 1))
 			},
 			expectedResult: true,
@@ -367,9 +366,8 @@ func TestClient_Delete(t *testing.T) {
 				AliasID: "non_existing_alias",
 			},
 			mockSetup: func() {
-				preparedQuery := query.New(QUERY_DELETE_ALIAS).Where().EQ("id", "?").Query()
+				preparedQuery := query.New(QUERY_DELETE_ALIAS).Where().EQ("id", "non_existing_alias").Query()
 				sqlMock.ExpectExec(regexp.QuoteMeta(preparedQuery.String())).
-					WithArgs("non_existing_alias").
 					WillReturnResult(sqlmock.NewResult(0, 0))
 			},
 			expectedResult: false,
@@ -381,9 +379,8 @@ func TestClient_Delete(t *testing.T) {
 				AliasID: "error_alias",
 			},
 			mockSetup: func() {
-				preparedQuery := query.New(QUERY_DELETE_ALIAS).Where().EQ("id", "?").Query()
+				preparedQuery := query.New(QUERY_DELETE_ALIAS).Where().EQ("id", "error_alias").Query()
 				sqlMock.ExpectExec(regexp.QuoteMeta(preparedQuery.String())).
-					WithArgs("error_alias").
 					WillReturnError(assert.AnError)
 			},
 			expectedResult: false,
@@ -395,9 +392,8 @@ func TestClient_Delete(t *testing.T) {
 				AliasID: "rows_error_alias",
 			},
 			mockSetup: func() {
-				preparedQuery := query.New(QUERY_DELETE_ALIAS).Where().EQ("id", "?").Query()
+				preparedQuery := query.New(QUERY_DELETE_ALIAS).Where().EQ("id", "rows_error_alias").Query()
 				sqlMock.ExpectExec(regexp.QuoteMeta(preparedQuery.String())).
-					WithArgs("rows_error_alias").
 					WillReturnResult(sqlmock.NewErrorResult(assert.AnError))
 			},
 			expectedResult: false,
@@ -1000,9 +996,8 @@ func TestClient_Get(t *testing.T) {
 				AliasID: "alias1",
 			},
 			mockSetup: func() {
-				preparedQuery := query.New(QUERY_GET_ALIASES).Where().EQ("id", "?").Query()
+				preparedQuery := query.New(QUERY_GET_ALIASES).Where().EQ("id", "alias1").Query()
 				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).
-					WithArgs("alias1").
 					WillReturnRows(sqlMock.NewRows([]string{"id", "key", "value", "color", "created_at"}).
 						AddRow("alias1", "key1", "value1", "color1", "2023-01-01"))
 			},
@@ -1021,9 +1016,8 @@ func TestClient_Get(t *testing.T) {
 				AliasID: "non_existent_alias",
 			},
 			mockSetup: func() {
-				preparedQuery := query.New(QUERY_GET_ALIASES).Where().EQ("id", "?").Query()
+				preparedQuery := query.New(QUERY_GET_ALIASES).Where().EQ("id", "non_existent_alias").Query()
 				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).
-					WithArgs("non_existent_alias").
 					WillReturnError(sql.ErrNoRows)
 			},
 			expectedResult: nil,
@@ -1035,9 +1029,8 @@ func TestClient_Get(t *testing.T) {
 				AliasID: "error_alias",
 			},
 			mockSetup: func() {
-				preparedQuery := query.New(QUERY_GET_ALIASES).Where().EQ("id", "?").Query()
+				preparedQuery := query.New(QUERY_GET_ALIASES).Where().EQ("id", "error_alias").Query()
 				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).
-					WithArgs("error_alias").
 					WillReturnError(assert.AnError)
 			},
 			expectedResult: nil,
@@ -1099,12 +1092,11 @@ func TestClient_GetFileAliases(t *testing.T) {
 			mockSetup: func(sqlMock sqlmock.Sqlmock) {
 				preparedQuery := query.New("SELECT a.id, a.key, a.value, a.color, a.created_at, a.updated_at FROM aliases as a").
 					InnerJoin("files_aliases as fa", "fa.alias_id=a.id").
-					Where().EQ("fa.file_id", "?").Query()
+					Where().EQ("fa.file_id", "file123").Query()
 				rows := sqlmock.NewRows([]string{"id", "key", "value", "color", "created_at", "updated_at"}).
 					AddRow("alias1", "key1", "value1", "red", "2023-01-01", "2023-01-01").
 					AddRow("alias2", "key2", "value2", "blue", "2023-01-02", "2023-01-02")
 				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).
-					WithArgs("file123").
 					WillReturnRows(rows)
 			},
 			expectedAliases: []*Alias{
@@ -1135,9 +1127,8 @@ func TestClient_GetFileAliases(t *testing.T) {
 			mockSetup: func(sqlMock sqlmock.Sqlmock) {
 				preparedQuery := query.New("SELECT a.id, a.key, a.value, a.color, a.created_at, a.updated_at FROM aliases as a").
 					InnerJoin("files_aliases as fa", "fa.alias_id=a.id").
-					Where().EQ("fa.file_id", "?").Query()
+					Where().EQ("fa.file_id", "file123").Query()
 				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).
-					WithArgs("file123").
 					WillReturnError(errors.New("database error"))
 			},
 			expectedAliases: nil,
@@ -1163,6 +1154,102 @@ func TestClient_GetFileAliases(t *testing.T) {
 			}
 			assert.Equal(t, tt.expectedAliases, aliases)
 			assert.Nil(t, sqlMock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestClient_GetFilesAliasesManyToMany(t *testing.T) {
+	tiny_errors.Init(custom_errors.ERRORS)
+	mockDb, sqlMock := database_mock.NewSQlMock(t)
+	client := New(&database.Client{mockDb})
+
+	tests := []struct {
+		name           string
+		req            *GetFilesAliasesManyToManyRequest
+		mockSetup      func()
+		expectedResult []*AliasWithFileId
+		expectedError  tiny_errors.ErrorHandler
+	}{
+		{
+			name: "successful retrieval",
+			req: &GetFilesAliasesManyToManyRequest{
+				FileIDs: []string{"file1", "file2"},
+			},
+			mockSetup: func() {
+				preparedQuery := query.New("SELECT a.id, fa.file_id, a.key, a.value, a.color, a.created_at, a.updated_at FROM aliases as a").
+					InnerJoin("files_aliases as fa", "fa.alias_id=a.id").
+					Where().IN("fa.file_id", []string{"file1", "file2"}).Query()
+
+				rows := sqlmock.NewRows([]string{"id", "file_id", "key", "value", "color", "created_at", "updated_at"}).
+					AddRow("alias1", "file1", "key1", "value1", "color1", "2023-01-01", "2023-01-01").
+					AddRow("alias2", "file2", "key2", "value2", "color2", "2023-01-02", "2023-01-02")
+				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).
+					WillReturnRows(rows)
+			},
+			expectedResult: []*AliasWithFileId{
+				{
+					Alias: Alias{
+						ID: "alias1", Key: "key1", Value: "value1", Color: "color1", CreatedAt: "2023-01-01", UpdatedAt: "2023-01-01",
+					},
+					FileID: "file1",
+				},
+				{
+					Alias: Alias{
+						ID: "alias2", Key: "key2", Value: "value2", Color: "color2", CreatedAt: "2023-01-02", UpdatedAt: "2023-01-02",
+					},
+					FileID: "file2",
+				},
+			},
+			expectedError: nil,
+		},
+		{
+			name:           "nil request",
+			req:            nil,
+			mockSetup:      func() {},
+			expectedResult: nil,
+			expectedError:  tiny_errors.New(custom_errors.ERR_CODE_BodyRequired),
+		},
+		{
+			name: "empty file IDs",
+			req: &GetFilesAliasesManyToManyRequest{
+				FileIDs: []string{},
+			},
+			mockSetup:      func() {},
+			expectedResult: nil,
+			expectedError:  tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, tiny_errors.Detail("file_id", "required")),
+		},
+		{
+			name: "database error",
+			req: &GetFilesAliasesManyToManyRequest{
+				FileIDs: []string{"file1"},
+			},
+			mockSetup: func() {
+				preparedQuery := query.New("SELECT a.id, fa.file_id, a.key, a.value, a.color, a.created_at, a.updated_at FROM aliases as a").
+					InnerJoin("files_aliases as fa", "fa.alias_id=a.id").
+					Where().IN("fa.file_id", []string{"file1"}).Query()
+				sqlMock.ExpectQuery(regexp.QuoteMeta(preparedQuery.String())).
+					WillReturnError(errors.New("database error"))
+			},
+			expectedResult: nil,
+			expectedError:  tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message("database error")),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.mockSetup()
+
+			result, err := client.GetFilesAliasesManyToMany(context.Background(), tt.req)
+
+			assert.Equal(t, tt.expectedResult, result)
+			if tt.expectedError != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.expectedError.GetCode(), err.GetCode())
+				assert.Equal(t, tt.expectedError.GetMessage(), err.GetMessage())
+				assert.Equal(t, tt.expectedError.GetDetails(), err.GetDetails())
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }

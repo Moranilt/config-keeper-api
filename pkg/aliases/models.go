@@ -4,8 +4,8 @@ const (
 	QUERY_GET_ALIASES        = "SELECT * FROM aliases"
 	QUERY_CREATE_ALIAS       = "INSERT INTO aliases"
 	QUERY_CHECK_ALIAS_EXISTS = `SELECT EXISTS(
-		SELECT 1 FROM folders 
-		WHERE name = $1 and value = $2
+		SELECT 1 FROM aliases 
+		WHERE key = $1 and value = $2
 		)`
 	QUERY_CHECK_ALIASES_IN_FILE = `SELECT id FROM aliases INNER JOIN`
 	QUERY_DELETE_ALIAS          = "DELETE FROM aliases"
@@ -21,6 +21,11 @@ type Alias struct {
 	Color     string `json:"color" db:"color"`
 	CreatedAt string `json:"created_at" db:"created_at"`
 	UpdatedAt string `json:"updated_at" db:"updated_at"`
+}
+
+type AliasWithFileId struct {
+	Alias
+	FileID string `json:"file_id" db:"file_id"`
 }
 
 type CreateRequest struct {
@@ -75,4 +80,8 @@ type RemoveFromFileRequest struct {
 
 type GetFileAliasesRequest struct {
 	FileID string
+}
+
+type GetFilesAliasesManyToManyRequest struct {
+	FileIDs []string
 }

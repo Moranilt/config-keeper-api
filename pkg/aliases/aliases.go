@@ -52,6 +52,9 @@ type Client interface {
 
 	// Retrieves aliases from a specific file
 	GetFileAliases(ctx context.Context, req *GetFileAliasesRequest) ([]*Alias, tiny_errors.ErrorHandler)
+
+	// Retrieves aliases of all provided file ids
+	GetFilesAliasesManyToMany(ctx context.Context, req *GetFilesAliasesManyToManyRequest) ([]*AliasWithFileId, tiny_errors.ErrorHandler)
 }
 
 // New creates a new instance of the Client interface, which provides methods for
@@ -80,11 +83,11 @@ func (c *client) Create(ctx context.Context, req *CreateRequest) (*Alias, tiny_e
 
 	preparedQuery := query.New(QUERY_CREATE_ALIAS).
 		InsertColumns("key", "value", "color").
-		Values("?", "?", "?").
-		Returning("id", "key", "value", "color", "created_at")
+		Values(req.Key, req.Value, req.Color).
+		Returning("id", "key", "value", "color", "created_at", "updated_at")
 
 	var alias Alias
-	err := c.db.QueryRowxContext(ctx, preparedQuery.String(), req.Key, req.Value, req.Color).StructScan(&alias)
+	err := c.db.QueryRowxContext(ctx, preparedQuery.String()).StructScan(&alias)
 	if err != nil {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
@@ -162,9 +165,9 @@ func (c *client) Delete(ctx context.Context, req *DeleteRequest) (bool, tiny_err
 		return false, tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, requiredErr...)
 	}
 
-	preparedQuery := query.New(QUERY_DELETE_ALIAS).Where().EQ("id", "?").Query()
+	preparedQuery := query.New(QUERY_DELETE_ALIAS).Where().EQ("id", req.AliasID).Query()
 
-	result, err := c.db.ExecContext(ctx, preparedQuery.String(), req.AliasID)
+	result, err := c.db.ExecContext(ctx, preparedQuery.String())
 	if err != nil {
 		return false, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}
@@ -234,9 +237,9 @@ func (c *client) Get(ctx context.Context, req *GetRequest) (*Alias, tiny_errors.
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, requiredErr...)
 	}
 
-	preparedQuery := query.New(QUERY_GET_ALIASES).Where().EQ("id", "?").Query()
+	preparedQuery := query.New(QUERY_GET_ALIASES).Where().EQ("id", req.AliasID).Query()
 	var alias Alias
-	err := c.db.GetContext(ctx, &alias, preparedQuery.String(), req.AliasID)
+	err := c.db.GetContext(ctx, &alias, preparedQuery.String())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, tiny_errors.New(custom_errors.ERR_CODE_NotFound, tiny_errors.HTTPStatus(http.StatusNotFound))
@@ -370,9 +373,33 @@ func (c *client) GetFileAliases(ctx context.Context, req *GetFileAliasesRequest)
 
 	preparedQuery := query.New("SELECT a.id, a.key, a.value, a.color, a.created_at, a.updated_at FROM aliases as a").
 		InnerJoin("files_aliases as fa", "fa.alias_id=a.id").
-		Where().EQ("fa.file_id", "?").Query()
+		Where().EQ("fa.file_id", req.FileID).Query()
 	aliases := make([]*Alias, 0)
-	err := c.db.SelectContext(ctx, &aliases, preparedQuery.String(), req.FileID)
+	err := c.db.SelectContext(ctx, &aliases, preparedQuery.String())
+	if err != nil {
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
+	}
+
+	return aliases, nil
+}
+
+func (c *client) GetFilesAliasesManyToMany(ctx context.Context, req *GetFilesAliasesManyToManyRequest) ([]*AliasWithFileId, tiny_errors.ErrorHandler) {
+	if req == nil {
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
+	}
+	requiredFields := []utils.RequiredField{
+		{Name: "file_id", Value: req.FileIDs},
+	}
+	requiredErr := utils.ValidateRequiredFields(requiredFields)
+	if len(requiredErr) > 0 {
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, requiredErr...)
+	}
+
+	preparedQuery := query.New("SELECT a.id, fa.file_id, a.key, a.value, a.color, a.created_at, a.updated_at FROM aliases as a").
+		InnerJoin("files_aliases as fa", "fa.alias_id=a.id").
+		Where().IN("fa.file_id", req.FileIDs).Query()
+	aliases := make([]*AliasWithFileId, 0)
+	err := c.db.SelectContext(ctx, &aliases, preparedQuery.String())
 	if err != nil {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(err.Error()))
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/Moranilt/config-keeper/custom_errors"
 	"github.com/Moranilt/config-keeper/endpoints"
 	"github.com/Moranilt/config-keeper/middleware"
+	"github.com/Moranilt/config-keeper/pkg/aliases"
 	"github.com/Moranilt/config-keeper/pkg/callback"
 	"github.com/Moranilt/config-keeper/pkg/content_formats"
 	"github.com/Moranilt/config-keeper/pkg/file_contents"
@@ -74,10 +75,21 @@ func Run(ctx context.Context) {
 	fileContentClient := file_contents.New(db)
 	listenersClient := listeners.New(db)
 	contentFormatsCLient := content_formats.New(db)
+	aliasesClient := aliases.New(db)
 
 	callbackChannel := callback.NewChannel(CALLBACK_CAPACITY)
 
-	repo := repository.New(db, callbackChannel, foldersClient, filesClient, fileContentClient, listenersClient, contentFormatsCLient, log)
+	repo := repository.New(
+		db,
+		callbackChannel,
+		foldersClient,
+		filesClient,
+		fileContentClient,
+		listenersClient,
+		contentFormatsCLient,
+		aliasesClient,
+		log,
+	)
 	svc := service.New(log, repo)
 	mw := middleware.New(log)
 	ep := endpoints.MakeEndpoints(svc, mw)

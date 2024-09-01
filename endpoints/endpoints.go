@@ -108,6 +108,46 @@ func MakeEndpoints(service service.Service, mw *middleware.Middleware) []Endpoin
 			HandleFunc: service.GetContentFormats,
 			Methods:    []string{http.MethodGet},
 		},
+		{
+			Pattern:    "/aliases",
+			HandleFunc: service.GetAliases,
+			Methods:    []string{http.MethodGet},
+		},
+		{
+			Pattern:    "/aliases",
+			HandleFunc: service.CreateAlias,
+			Methods:    []string{http.MethodPost},
+		},
+		{
+			Pattern:    "/aliases/{alias_id}",
+			HandleFunc: service.EditAlias,
+			Methods:    []string{http.MethodPatch},
+		},
+		{
+			Pattern:    "/aliases/{alias_id}",
+			HandleFunc: service.DeleteAlias,
+			Methods:    []string{http.MethodDelete},
+		},
+		{
+			Pattern:    "/aliases/{alias_id}",
+			HandleFunc: service.GetAlias,
+			Methods:    []string{http.MethodGet},
+		},
+		{
+			Pattern:    "/files/{file_id}/aliases",
+			HandleFunc: service.AddAliasToFile,
+			Methods:    []string{http.MethodPut},
+		},
+		{
+			Pattern:    "/files/{file_id}/aliases",
+			HandleFunc: service.GetFileAliases,
+			Methods:    []string{http.MethodGet},
+		},
+		{
+			Pattern:    "/files/{file_id}/aliases",
+			HandleFunc: service.RemoveFileAliases,
+			Methods:    []string{http.MethodDelete},
+		},
 	}
 }
 

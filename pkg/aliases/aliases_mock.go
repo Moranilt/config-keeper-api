@@ -104,3 +104,12 @@ func (m *MockClient) GetFileAliases(ctx context.Context, req *GetFileAliasesRequ
 	}
 	return nil, err.(tiny_errors.ErrorHandler)
 }
+func (m *MockClient) GetFilesAliasesManyToMany(ctx context.Context, req *GetFilesAliasesManyToManyRequest) ([]*AliasWithFileId, tiny_errors.ErrorHandler) {
+	args := m.Called(ctx, req)
+	aliases := args.Get(0)
+	err := args.Get(1)
+	if err == nil {
+		return aliases.([]*AliasWithFileId), nil
+	}
+	return nil, err.(tiny_errors.ErrorHandler)
+}
