@@ -20,6 +20,7 @@ const (
 
 	ENV_TRACER_URL  = "TRACER_URL"
 	ENV_TRACER_NAME = "TRACER_NAME"
+	ENV_WITH_CORS   = "WITH_CORS"
 )
 
 var envVariables []string = []string{
@@ -43,12 +44,14 @@ type Config struct {
 	DB         *database.Credentials
 	Port       string
 	Production bool
+	WithCORS   bool
 }
 
 func Read() (*Config, error) {
 	var envCfg Config
 	viper.AutomaticEnv()
 	isProduction := viper.GetBool(ENV_PRODUCTION)
+	withCORS := viper.GetBool(ENV_WITH_CORS)
 
 	result := make(map[string]string, len(envVariables))
 	for _, name := range envVariables {
@@ -79,6 +82,7 @@ func Read() (*Config, error) {
 		},
 		Port:       result[ENV_PORT],
 		Production: isProduction,
+		WithCORS:   withCORS,
 	}
 
 	return &envCfg, nil

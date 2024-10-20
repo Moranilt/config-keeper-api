@@ -387,12 +387,9 @@ func (c *client) GetFilesAliasesManyToMany(ctx context.Context, req *GetFilesAli
 	if req == nil {
 		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
 	}
-	requiredFields := []utils.RequiredField{
-		{Name: "file_id", Value: req.FileIDs},
-	}
-	requiredErr := utils.ValidateRequiredFields(requiredFields)
-	if len(requiredErr) > 0 {
-		return nil, tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, requiredErr...)
+
+	if len(req.FileIDs) == 0 {
+		return nil, nil
 	}
 
 	preparedQuery := query.New("SELECT a.id, fa.file_id, a.key, a.value, a.color, a.created_at, a.updated_at FROM aliases as a").

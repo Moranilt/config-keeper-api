@@ -13,6 +13,7 @@ import (
 	"github.com/Moranilt/config-keeper/pkg/files"
 	"github.com/Moranilt/config-keeper/pkg/folders"
 	"github.com/Moranilt/config-keeper/pkg/listeners"
+	"github.com/Moranilt/config-keeper/pkg/search"
 	"github.com/Moranilt/config-keeper/utils"
 	"github.com/Moranilt/http-utils/clients/database"
 	"github.com/Moranilt/http-utils/logger"
@@ -36,6 +37,7 @@ type Repository struct {
 	callback       callback.CallbackChannel
 	contentFormats content_formats.Client
 	aliases        aliases.Client
+	search         search.Client
 }
 
 func New(
@@ -47,6 +49,7 @@ func New(
 	listeners listeners.Client,
 	contentFormats content_formats.Client,
 	aliases aliases.Client,
+	search search.Client,
 	logger logger.Logger,
 ) *Repository {
 	return &Repository{
@@ -60,6 +63,7 @@ func New(
 		callback:       callback,
 		contentFormats: contentFormats,
 		aliases:        aliases,
+		search:         search,
 	}
 }
 
@@ -831,4 +835,21 @@ func (repo *Repository) RemoveFileAliases(ctx context.Context, req *models.Remov
 	return &models.RemoveAliasFromFileResponse{
 		Removed: removed,
 	}, nil
+}
+
+func (repo *Repository) SearchGlobal(ctx context.Context, req *models.SearchGlobalRequest) (*models.SearchGlobalResponse, tiny_errors.ErrorHandler) {
+	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req, "callback", "SearchGlobal")
+	ctx, span := repo.tracer.Start(ctx, "SearchGlobal")
+	defer span.End()
+
+	result, err := repo.search.Global(ctx, &search.GlobalSearchRequest{
+		Query: req.Query,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "SearchGlobal")
+		return nil, err
+	}
+
+	return (*models.SearchGlobalResponse)(&result), nil
 }

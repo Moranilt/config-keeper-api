@@ -148,6 +148,11 @@ func MakeEndpoints(service service.Service, mw *middleware.Middleware) []Endpoin
 			HandleFunc: service.RemoveFileAliases,
 			Methods:    []string{http.MethodDelete},
 		},
+		{
+			Pattern:    "/search",
+			HandleFunc: service.SearchGlobal,
+			Methods:    []string{http.MethodGet},
+		},
 	}
 }
 

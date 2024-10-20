@@ -17,7 +17,7 @@ info:
     
     Using this API you can manipulate folders, files, file contents etc.
 servers:
-  - url: "http://locahost:8080"
+  - url: "http://localhost:8080"
 tags:
   - name: Folders
     description: all folders actions
@@ -29,6 +29,10 @@ tags:
     description: File listeners which will be called when any content was updated
   - name: Content Formats
     description: Formats of content to determine which parser we should use to display it(yaml, json etc.)
+  - name: Aliases
+    description: Files aliases which will help you to search your files. Each file can have multiple aliases.
+  - name: Search
+    description: Search any config by keywords
 
 paths:
   /folders:
@@ -294,6 +298,156 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/Get_Content_Formats'
+          
+  /aliases:
+    post:
+      tags: ["Aliases"]
+      summary: Crete new alias
+      operationId: createAlias
+      description: Create new alias. If alias already exists with given key and value you'll get an error
+      requestBody:
+        $ref: '#/components/requestBodies/Create_Alias'
+      responses:
+        '201':
+          $ref: '#/components/responses/Create_Alias'
+    get:
+      tags: ["Aliases"]
+      summary: Get all aliases
+      operationId: getManyAliases
+      description: Get a list of all aliases with pagination and search
+      parameters:
+        - name: limit
+          schema:
+            type: string
+            example: "10"
+            default: "10"
+          required: false
+          in: query
+        - name: offset
+          schema:
+            type: string
+            example: "0"
+            default: "0"
+          required: false
+          in: query
+        - name: key
+          schema:
+            type: string
+            example: "team"
+          required: false
+          in: query
+        - name: value
+          schema:
+            type: string
+            example: "team_1"
+          required: false
+          in: query
+        - name: order_by
+          schema:
+            type: string
+            example: "key"
+            default: "key"
+          required: false
+          in: query
+        - name: order_type
+          schema:
+            type: string
+            example: "desc"
+            default: "asc"
+            enum: ["desc", "asc"]
+          required: false
+          in: query
+      responses:
+        '200':
+          $ref: '#/components/responses/Get_Aliases'
+  /aliases/{alias_id}:
+    parameters:
+      - name: alias_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+        in: path
+    get:
+      tags: ["Aliases"]
+      summary: Get alias data
+      operationId: getAlias
+      description: Retrive a single alias based on alias_id
+      responses:
+        '200':
+          $ref: '#/components/responses/Get_Alias'
+    delete:
+      tags: ["Aliases"]
+      summary: Delete specific alias
+      operationId: deleteAlias
+      description: Delete alias if it exists
+      responses:
+        '200':
+          $ref: '#/components/responses/Delete_Alias_Success'
+    patch:
+      tags: ["Aliases"]
+      summary: Edit selected alias
+      operationId: editAlias
+      description: Edit selected alias fields
+      requestBody:
+        $ref: '#/components/requestBodies/Edit_Alias'
+      responses:
+        '200':
+          $ref: '#/components/responses/Edit_Alias_Success'
+          
+  /files/{file_id}/aliases:
+    parameters:
+      - name: file_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+        in: path
+    put:
+      tags: ["Files", "Aliases"]
+      summary: Add aliases to selected file
+      operationId: joinFileAliases
+      description: Join multiple aliases to a single file if alises don't exist in this file
+      requestBody:
+        $ref: '#/components/requestBodies/Join_File_Aliases'
+      responses:
+        '200':
+          $ref: '#/components/responses/Join_File_Aliases'
+    delete:
+      tags: ["Files", "Aliases"]
+      summary: Remove aliases from file
+      operationId: removeFileAliases
+      description: Removing provided aliases from selected file
+      requestBody:
+        $ref: '#/components/requestBodies/Join_File_Aliases'
+      responses:
+        '200':
+          $ref: '#/components/responses/Delete_File_Aliases'
+    get:
+      tags: ["Files", "Aliases"]
+      summary: Get all aliases in file
+      operationId: getFileAliases
+      description: Get all file aliases
+      responses:
+        '200':
+          $ref: '#/components/responses/Get_Aliases'
+
+  /search:
+    get:
+      parameters:
+        - name: q
+          schema:
+            type: string
+          required: true
+          in: query
+      tags: ["Search"]
+      summary: Global search
+      operationId: searchGlobal
+      description: Seach for a files with required tags, filename, foldername
+      responses:
+        '200':
+          $ref: "#/components/responses/Search_Global"
+      
       
       
 components:
@@ -372,7 +526,7 @@ components:
           format: uuid
         content:
           type: string
-          example: "your file config here in any format"
+          format: base64
           description: any data inside configuration file
         version:
           type: string
@@ -423,6 +577,58 @@ components:
         name:
           type: string
           enum: ["yaml", "toml", "json", "env"]
+    
+    Alias:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+          example: "team"
+          description: Alias name
+        value:
+          type: string
+          example: "team_1"
+          description: Value which can be used to search
+        color:
+          type: string
+          example: "#fa4467"
+          description: Color which will be displayed in UI
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          
+    Search_Global_Result:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        folder_name:
+          type: string
+          example: "folder_name"
+        file_name:
+          type: string
+          example: "file_name"
+        folder_id:
+          type: string
+          format: uuid
+          nullable: true
+        aliases:
+          type: string
+          description: a list of aliases separated with a semicolon
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        
           
 
   requestBodies:
@@ -545,7 +751,61 @@ components:
                 type: string
                 example: "https://new_host.com/config"
                 nullable: true
-
+                
+    Create_Alias:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              key:
+                type: string
+                example: "team"
+              value:
+                type: string
+                example: "team_1"
+              color:
+                type: string
+                example: "#fa4487"
+  
+    Edit_Alias:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              key:
+                type: string
+                example: "new_key"
+                nullable: true
+              value:
+                type: string
+                example: "new_value"
+                nullable: true
+              color:
+                type: string
+                example: "#32fe78"
+                nullable: true
+                
+    Join_File_Aliases:
+      required: true
+      description: Multiple alias IDs which will be connected with file
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              aliases:
+                type: array
+                minItems: 2
+                maxItems: 5
+                items:
+                  schema:
+                    type: string
+                    format: uuid
+                    
   responses:
     Create_Folder_Success:
       description: New folder data
@@ -592,6 +852,13 @@ components:
                             maxItems: 5
                             items:
                               $ref: '#/components/schemas/File'
+                          aliases:
+                            type: array
+                            description: connected aliases
+                            minItems: 0
+                            maxItems: 5
+                            items:
+                              $ref: '#/components/schemas/Alias'
                               
     Delete_Folder_Success:
       description: removed or not
@@ -795,3 +1062,116 @@ components:
                     maxItems: 5
                     items:
                       $ref: '#/components/schemas/Content_Format'
+                      
+    Create_Alias:
+      description: Get new alias  data
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/Alias'
+                    
+    Get_Aliases:
+      description: A list of aliases
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: array
+                    minItems: 2
+                    maxItems: 5
+                    items:
+                      $ref: '#/components/schemas/Alias'
+                      
+    Get_Alias:
+      description: Alias data
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/Alias'
+      
+    Delete_Alias_Success:
+      description: removed or not
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: object
+                    properties:
+                      status:
+                        type: boolean
+                   
+    Edit_Alias_Success:
+      description: Updated alias data
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    $ref: '#/components/schemas/Alias'
+                    
+    Join_File_Aliases:
+      description: New array of joined aliases
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: object
+                    properties:
+                      added:
+                        type: number
+    Delete_File_Aliases:
+      description: Amount of removed aliases from file
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: object
+                    properties:
+                      removed:
+                        type: number
+                        
+    Search_Global:
+      description: A list of files data
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Default_Response'
+              - type: object
+                properties:
+                  body:
+                    type: array
+                    minItems: 2
+                    maxItems: 5
+                    items:
+                      $ref: '#/components/schemas/Search_Global_Result'
+                    

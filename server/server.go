@@ -18,6 +18,7 @@ import (
 	"github.com/Moranilt/config-keeper/pkg/files"
 	"github.com/Moranilt/config-keeper/pkg/folders"
 	"github.com/Moranilt/config-keeper/pkg/listeners"
+	"github.com/Moranilt/config-keeper/pkg/search"
 	"github.com/Moranilt/config-keeper/repository"
 	"github.com/Moranilt/config-keeper/service"
 	"github.com/Moranilt/config-keeper/tracer"
@@ -76,6 +77,7 @@ func Run(ctx context.Context) {
 	listenersClient := listeners.New(db)
 	contentFormatsCLient := content_formats.New(db)
 	aliasesClient := aliases.New(db)
+	searchClient := search.New(db)
 
 	callbackChannel := callback.NewChannel(CALLBACK_CAPACITY)
 
@@ -88,6 +90,7 @@ func Run(ctx context.Context) {
 		listenersClient,
 		contentFormatsCLient,
 		aliasesClient,
+		searchClient,
 		log,
 	)
 	svc := service.New(log, repo)
@@ -95,7 +98,7 @@ func Run(ctx context.Context) {
 	ep := endpoints.MakeEndpoints(svc, mw)
 	health := endpoints.MakeHealth(db)
 	ep = append(ep, health)
-	server := transport.New(fmt.Sprintf(":%s", cfg.Port), ep, mw)
+	server := transport.New(fmt.Sprintf(":%s", cfg.Port), ep, mw, cfg.WithCORS)
 
 	httpClient := client.New()
 	client.SetTimeout(60 * time.Second)

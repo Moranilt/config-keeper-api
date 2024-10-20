@@ -52,6 +52,10 @@ type ContentFormatsService interface {
 	GetContentFormats(w http.ResponseWriter, r *http.Request)
 }
 
+type SearchService interface {
+	SearchGlobal(w http.ResponseWriter, r *http.Request)
+}
+
 type Service interface {
 	FolderService
 	FileService
@@ -59,6 +63,7 @@ type Service interface {
 	ListenersService
 	AliasesService
 	ContentFormatsService
+	SearchService
 }
 
 type service struct {
@@ -236,5 +241,11 @@ func (s *service) RemoveFileAliases(w http.ResponseWriter, r *http.Request) {
 	handler.New(w, r, s.log, s.repo.RemoveFileAliases).
 		WithVars().
 		WithJSON().
+		Run(http.StatusOK)
+}
+
+func (s *service) SearchGlobal(w http.ResponseWriter, r *http.Request) {
+	handler.New(w, r, s.log, s.repo.SearchGlobal).
+		WithQuery().
 		Run(http.StatusOK)
 }

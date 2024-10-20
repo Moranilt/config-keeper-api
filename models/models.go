@@ -7,6 +7,7 @@ import (
 	"github.com/Moranilt/config-keeper/pkg/files"
 	"github.com/Moranilt/config-keeper/pkg/folders"
 	"github.com/Moranilt/config-keeper/pkg/listeners"
+	"github.com/Moranilt/config-keeper/pkg/search"
 )
 
 type CreateFolderRequest struct {
@@ -221,3 +222,9 @@ type RemoveAliasFromFileRequest struct {
 type RemoveAliasFromFileResponse struct {
 	Removed int `json:"removed"`
 }
+
+type SearchGlobalRequest struct {
+	Query string `mapstructure:"q"`
+}
+
+type SearchGlobalResponse []*search.GlobalSearchResult

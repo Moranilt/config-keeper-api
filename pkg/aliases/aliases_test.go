@@ -1216,7 +1216,7 @@ func TestClient_GetFilesAliasesManyToMany(t *testing.T) {
 			},
 			mockSetup:      func() {},
 			expectedResult: nil,
-			expectedError:  tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, tiny_errors.Detail("file_id", "required")),
+			expectedError:  nil,
 		},
 		{
 			name: "database error",
