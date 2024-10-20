@@ -75,25 +75,3 @@ CREATE INDEX idx_mv_file_search_trigram ON mv_file_search USING gin (
     aliases gin_trgm_ops,
     folder_name gin_trgm_ops
 );
-
--- WITH search_query AS (
---     SELECT plainto_tsquery('english', 'folder_2') AS tsquery,
--- 	'folder_2' as raw_query
--- )
--- SELECT DISTINCT ON (mv.id) 
---     mv.id, mv.folder_name, mv.file_name, mv.folder_id, mv.aliases, mv.created_at, mv.updated_at
--- FROM 
---     mv_file_search mv,
---     search_query
--- WHERE 
---     mv.search_vector @@ search_query.tsquery
--- 	OR mv.file_name ILIKE '%' || search_query.raw_query || '%'
---     OR mv.aliases ILIKE '%' || search_query.raw_query || '%'
---     OR mv.folder_name ILIKE '%' || search_query.raw_query || '%'
--- ORDER BY 
---     mv.id, 
---     ts_rank(mv.search_vector, search_query.tsquery) DESC,
--- 	similarity(mv.file_name, search_query.raw_query) DESC,
---     similarity(mv.aliases, search_query.raw_query) DESC,
---     similarity(mv.folder_name, search_query.raw_query) DESC
-
