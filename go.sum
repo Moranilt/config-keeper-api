@@ -4,8 +4,8 @@ github.com/DATA-DOG/go-sqlmock v1.5.2 h1:OcvFkGmslmlZibjAjaHm3L//6LiuBgolP7Oputl
 github.com/DATA-DOG/go-sqlmock v1.5.2/go.mod h1:88MAG/4G7SMwSE3CeA0ZKzrT5CiOU3OJ+JlNzwDqpNU=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
-github.com/Moranilt/http-utils v1.1.22 h1:FFab0JBj3ERrYkSJCTwdb6yPHcKRvInmbo8ZBGoX3q4=
-github.com/Moranilt/http-utils v1.1.22/go.mod h1:mGaWFqflUYGxM4VN6zu+FUmId1XJfJfj+0m3Z1GvBY4=
+github.com/Moranilt/http-utils v1.1.24 h1:icuT0p4IC6y7ThbHgg91vuF9s4S7Nkps8+SLXxxYw98=
+github.com/Moranilt/http-utils v1.1.24/go.mod h1:mGaWFqflUYGxM4VN6zu+FUmId1XJfJfj+0m3Z1GvBY4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=

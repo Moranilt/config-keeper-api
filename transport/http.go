@@ -9,8 +9,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func New(addr string, endpoints []endpoints.Endpoint, mw *middleware.Middleware) *http.Server {
+func New(addr string, endpoints []endpoints.Endpoint, mw *middleware.Middleware, withCORS bool) *http.Server {
 	router := mux.NewRouter()
+
+	if withCORS {
+		router.Use(mw.CORS)
+	}
 	router.Use(mw.Default, mw.Otel)
 
 	for _, endpoint := range endpoints {

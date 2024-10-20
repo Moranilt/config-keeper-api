@@ -112,7 +112,6 @@ func (s *callbackService) sendToListeners(ctx context.Context, listeners []*list
 	limiter := make(chan struct{}, 10) // Limit to 10 concurrent requests
 
 	for _, listener := range listeners {
-		listener := listener
 		limiter <- struct{}{}
 		g.Go(func() error {
 			defer func() { <-limiter }()
